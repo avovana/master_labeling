@@ -18,8 +18,8 @@ add_executable(${PROJECT_NAME}
     main.cpp
     mainwindow.cpp
     mainwindow.h
-    mytcpserver.h
-    mytcpserver.cpp
+    #mytcpserver.h
+    #mytcpserver.cpp
     mainwindow.ui
 )
 
