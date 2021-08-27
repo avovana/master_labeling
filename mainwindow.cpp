@@ -5,6 +5,7 @@
 #include <fstream>
 
 #include <QBitArray>
+#include <QMessageBox>
 
 using namespace std;
 
@@ -288,7 +289,50 @@ void MainWindow::on_server_read() {
             out << scan.toStdString();
             out.close();
 
+            ui->current_1_label->setText(QString::number(++current));
         }
+        break;
+        case 3:
+        {
+            QByteArray buffer(header - 2, Qt::Uninitialized);
+
+            ds.readRawData(buffer.data(), header - 2);
+            QString scan(buffer);
+
+            qDebug() << "file save...";
+            qDebug() << scan;
+            auto pos = scan.lastIndexOf(QChar('\n'));
+            if(pos != -1)
+                scan.truncate(pos);
+
+            time_t rawtime;
+            struct tm * timeinfo;
+            char bufferDate[80];
+
+            time (&rawtime);
+            timeinfo = localtime(&rawtime);
+
+            strftime(bufferDate, sizeof(bufferDate), "%d-%m-%Y", timeinfo);
+            std::string date(bufferDate);
+
+            qDebug() << "date: " << date.c_str();
+
+            std::ofstream out(date + "_ki_line_№" + to_string(line_number) + ".txt");
+            out << scan.toStdString();
+            out.close();
+
+            QMessageBox msg_box;
+            msg_box.setWindowTitle("Линия №7");
+            msg_box.setText("Работа завершена. Файл КИ принят");
+            msg_box.exec();
+
+            auto palette = QPalette();
+            palette.setColor(QPalette().Base, QColor("#23F617"));
+            ui->line_1_status_finish_checkbox->setPalette(palette);
+
+            qDebug() << "После QMessageBox1113";
+        }
+        break;
     }
 
 }

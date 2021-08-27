@@ -25,4 +25,6 @@ private:
     Ui::MainWindow *ui;
     QTcpServer * mTcpServer;
     QTcpSocket * mTcpSocket;
+
+    int current = 0;
 };

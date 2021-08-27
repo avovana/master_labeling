@@ -15,31 +15,45 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="3">
-     <widget class="QLabel" name="product_name_label">
-      <property name="text">
-       <string>Наименование продукции</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="4">
+    <item row="0" column="5">
      <widget class="QLabel" name="plan_label">
       <property name="text">
        <string>План</string>
       </property>
      </widget>
     </item>
-    <item row="0" column="5">
-     <widget class="QLabel" name="current_label">
+    <item row="0" column="4">
+     <widget class="QLabel" name="product_name_label">
       <property name="text">
-       <string>Факт</string>
+       <string>Наименование продукции</string>
       </property>
      </widget>
     </item>
-    <item row="1" column="0">
-     <widget class="QLabel" name="line_number_1_label">
+    <item row="1" column="5">
+     <widget class="QLineEdit" name="plan_1_lineedit">
       <property name="text">
-       <string>Линия №1</string>
+       <string>10</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0" colspan="4">
+     <widget class="QPushButton" name="make_template_pushbutton">
+      <property name="text">
+       <string>Загрузить шаблон</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="3" colspan="2">
+     <widget class="QLineEdit" name="product_1_name_lineedit">
+      <property name="text">
+       <string>Sir Kavkazkiu</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="6">
+     <widget class="QLabel" name="current_label">
+      <property name="text">
+       <string>Факт</string>
       </property>
      </widget>
     </item>
@@ -56,38 +70,37 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="2" colspan="2">
-     <widget class="QLineEdit" name="product_1_name_lineedit">
-      <property name="text">
-       <string>Sir Kavkazkiu</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="4">
-     <widget class="QLineEdit" name="plan_1_lineedit">
-      <property name="text">
-       <string>10</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="5">
-     <widget class="QLabel" name="current_1_label">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="6">
+    <item row="1" column="7">
      <widget class="QPushButton" name="line_1_start_pushbutton">
       <property name="text">
        <string>Старт</string>
       </property>
      </widget>
     </item>
-    <item row="2" column="0" colspan="3">
-     <widget class="QPushButton" name="make_template_pushbutton">
+    <item row="1" column="0">
+     <widget class="QLabel" name="line_number_1_label">
       <property name="text">
-       <string>Загрузить шаблон</string>
+       <string>Линия №1</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="6">
+     <widget class="QLabel" name="current_1_label">
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="2">
+     <widget class="QCheckBox" name="line_1_status_finish_checkbox">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="checkable">
+       <bool>false</bool>
       </property>
      </widget>
     </item>
