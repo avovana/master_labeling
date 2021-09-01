@@ -415,7 +415,23 @@ void MainWindow::on_make_template_pushbutton_clicked() {
     struct tm * now = localtime( & t );
     strftime (date_buffer,80,date_pattern.c_str(),now);
 
-    string filename = std::string(date_buffer) + " " + product_name + ".csv";
+    // Подсчитать кол-во сканов
+    string s;
+    int sTotal = 0;
+
+    ifstream in;
+    in.open(ki_name.toStdString());
+
+    while(!in.eof()) {
+        getline(in, s);
+        sTotal ++;
+    }
+
+    cout << "sTotal: " << sTotal << endl;
+    in.close();
+    // Создать файл
+
+    string filename = std::string(date_buffer) + " " + product_name + " " + to_string(sTotal)+ ".csv";
 
     std::ofstream template_file;
 
@@ -432,19 +448,7 @@ void MainWindow::on_make_template_pushbutton_clicked() {
 
     //------------------------Scans-----------------------------
 
-    string s;
-    int sTotal = 0;
 
-    ifstream in;
-    in.open(ki_name.toStdString());
-
-    while(!in.eof()) {
-        getline(in, s);
-        sTotal ++;
-    }
-
-    cout << "sTotal: " << sTotal << endl;
-    in.close();
 
     //Открыть ки файл. Считывать строку за строкой. Дописывать в результирующий файл
 
@@ -485,4 +489,17 @@ void MainWindow::on_make_template_pushbutton_clicked() {
         if(--sTotal > 0)
             template_file << endl;
     }
+}
+
+void MainWindow::on_line_1_start_pushbutton_clicked() {
+    QByteArray out_array;
+    QDataStream stream(&out_array, QIODevice::WriteOnly);
+    unsigned int out_msg_size = sizeof(unsigned int);
+    unsigned int type = 6;
+    stream << out_msg_size;
+    stream << type;
+
+    qDebug() << " on_line_1_start_pushbutton_clicked out_array.size(): " << out_array.size();
+
+    mTcpSocket->write(out_array);
 }

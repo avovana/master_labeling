@@ -44,6 +44,8 @@ public slots:
 private slots:
     void on_make_template_pushbutton_clicked();
 
+    void on_line_1_start_pushbutton_clicked();
+
 private:
     Ui::MainWindow *ui;
     QTcpServer * mTcpServer;
