@@ -3,11 +3,28 @@
 
 #include <iostream>
 #include <fstream>
+#include <regex>
 
 #include <QBitArray>
-#include <QMessageBox>
+#include <QFileDialog>
+
+#include "pugixml.hpp"
 
 using namespace std;
+
+ostream& operator<<( ostream&  out, Position& pos ) {
+    out << "code_tn_ved: " << pos.code_tn_ved << " " << endl
+        << "document_type: " << pos.document_type << " " << endl
+        << "document_number: " << pos.document_number << " " << endl
+        << "document_date: " << pos.document_date << " " << endl
+        << "vsd: " << pos.vsd << " " << endl
+        << "name: " << pos.name << " " << endl
+        << "inn:" << pos.inn << endl
+        << "expected: " << pos.expected << endl
+        << "current: " << pos.current << endl;
+
+    return out;
+}
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -321,16 +338,11 @@ void MainWindow::on_server_read() {
             out << scan.toStdString();
             out.close();
 
-            QMessageBox msg_box;
-            msg_box.setWindowTitle("Линия №7");
-            msg_box.setText("Работа завершена. Файл КИ принят");
-            msg_box.exec();
-
             auto palette = QPalette();
             palette.setColor(QPalette().Base, QColor("#23F617"));
             ui->line_1_status_finish_checkbox->setPalette(palette);
 
-            qDebug() << "После QMessageBox1113";
+            qDebug() << "Статус проставлен";
         }
         break;
     }
@@ -346,3 +358,131 @@ MainWindow::~MainWindow() {
     delete ui;
 }
 
+
+void MainWindow::on_make_template_pushbutton_clicked() {
+    //------------------------File choose-----------------------------
+    QString ki_name = QFileDialog::getOpenFileName();
+    qDebug() << "Filename: " << ki_name;
+    qDebug() << "product_name: " << ui->product_1_name_lineedit->text();
+    string product_name = ui->product_1_name_lineedit->text().toStdString();
+
+    //------------------------Download config-----------------------------
+    Position position;
+
+    pugi::xml_document doc;
+    if (!doc.load_file("positions.xml")) {
+        cout << "Не удалось загрузить XML документ" << endl;
+        return;
+    } else {
+        cout << "Удалось загрузить XML документ" << endl;
+    }
+
+    pugi::xml_node inn_xml = doc.child("resources").child("inn");
+    pugi::xml_node version = doc.child("resources").child("version");
+
+    pugi::xml_node positions_xml = doc.child("resources").child("input");
+
+    if (positions_xml.children("position").begin() == positions_xml.children("position").end()) {
+        cout << "ОШИБКА! В документе нет позиций!" << endl;
+        return;
+    }
+
+    for (pugi::xml_node position_xml: positions_xml.children("position")) {
+        std::string position_name = position_xml.attribute("name_english").as_string();
+        std::cout << "position_name: " << position_name << endl;
+
+        if(product_name == position_name) {
+            position = Position{position_xml.attribute("code_tn_ved").as_string(),
+                                         position_xml.attribute("document_type").as_string(),
+                                         position_xml.attribute("document_number").as_string(),
+                                         position_xml.attribute("document_date").as_string(),
+                                         position_xml.attribute("vsd").as_string(),
+                                         position_name,
+                                         inn_xml.text().get(),
+                                         position_xml.attribute("name_english").as_string(),
+                                         position_xml.attribute("expected").as_int(),
+                                         position_xml.attribute("current").as_int()};
+
+            std::cout << "Считана позиция: " << endl << position << endl;
+        }
+    }
+    //------------------------Make file-----------------------------
+
+    std::string date_pattern = std::string("%Y-%m-%d");
+    char date_buffer [80];
+
+    time_t t = time(0);
+    struct tm * now = localtime( & t );
+    strftime (date_buffer,80,date_pattern.c_str(),now);
+
+    string filename = std::string(date_buffer) + " " + product_name + ".csv";
+
+    std::ofstream template_file;
+
+    template_file.open(filename, std::ios_base::app);
+    if(not template_file.is_open()) {
+        std::cout<<"Ошибка создания файла шаблона"<<std::endl;
+        return;
+    }
+    //------------------------Header-----------------------------
+
+    template_file << "ИНН участника оборота,ИНН производителя,ИНН собственника,Дата производства,Тип производственного заказа,Версия" << endl;
+    template_file << position.inn << "," << position.inn << "," << position.inn << "," << date_buffer << ",Собственное производство,4" << endl;
+    template_file << "КИ,КИТУ,Дата производства,Код ТН ВЭД ЕАС товара,Вид документа подтверждающего соответствие,Номер документа подтверждающего соответствие,Дата документа подтверждающего соответствие,Идентификатор ВСД" << endl;
+
+    //------------------------Scans-----------------------------
+
+    string s;
+    int sTotal = 0;
+
+    ifstream in;
+    in.open(ki_name.toStdString());
+
+    while(!in.eof()) {
+        getline(in, s);
+        sTotal ++;
+    }
+
+    cout << "sTotal: " << sTotal << endl;
+    in.close();
+
+    //Открыть ки файл. Считывать строку за строкой. Дописывать в результирующий файл
+
+    std::ifstream infile;
+
+    infile.open(ki_name.toStdString(), std::ios_base::app);
+    if(not infile.is_open()) {
+        std::cout<<"Ошибка открытия ки файла"<<std::endl;
+        return;
+    }
+
+    //auto lines = std::count(std::istreambuf_iterator<char>(infile),
+    //             std::istreambuf_iterator<char>(), '\n');
+    //
+    //cout << "lines: " << lines << endl;
+
+    std::string scan;
+
+    while (std::getline(infile, scan)) {
+        char gs = 29;
+        auto pos = scan.find(gs);
+
+        scan = scan.substr(0,pos);
+
+        scan = std::regex_replace(scan, std::regex("\""), "\"\"");
+        scan.insert(0, 1, '"');
+        scan.push_back('"');
+
+        template_file << scan << ","
+           << ","
+           << date_buffer << ","
+           << position.code_tn_ved << ","
+           << position.document_type << ","
+           << position.document_number << ","
+           << position.document_date << ","
+           << position.vsd;
+
+        if(--sTotal > 0)
+            template_file << endl;
+    }
+}

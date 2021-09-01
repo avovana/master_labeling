@@ -21,10 +21,15 @@ add_executable(${PROJECT_NAME}
     #mytcpserver.h
     #mytcpserver.cpp
     mainwindow.ui
+    pugixml.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt5::Widgets
     Qt5::Core
     Qt5::Network
+)
+
+target_include_directories(${PROJECT_NAME} PUBLIC
+    include
 )
