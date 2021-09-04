@@ -8,8 +8,6 @@
 #include <QBitArray>
 #include <QFileDialog>
 
-#include "pugixml.hpp"
-
 using namespace std;
 
 ostream& operator<<( ostream&  out, Position& pos ) {
@@ -30,6 +28,9 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow) {
     ui->setupUi(this);
+
+    // Прочитать vsd
+    update_xml();
 
     mTcpServer = new QTcpServer(this);
 
@@ -170,7 +171,7 @@ void MainWindow::on_server_read() {
         case 1:
         {
         switch(line_number) {
-            case 7:
+            case 1:
             {
             ui->line_1_status_checkbox->setChecked(true);
             ui->line_1_status_checkbox->setEnabled(false);
