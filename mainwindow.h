@@ -57,55 +57,43 @@ private slots:
 
         vsd.open(vsd_path);
         if(not vsd.is_open()) {
-            std::cout<<"Ошибка открытия vsd.csv"<<std::endl;
+            std::cout<<"Open vsd.csv ERROR"<<std::endl;
             return {};
         } else {
-            std::cout<<"Открытие vsd.csv успешно"<<std::endl;
+            std::cout<<"Open vsd.csv success"<<std::endl;
         }
 
         std::map<std::string, std::string> vsds;
         std::string line;
         for (int i = 0; std::getline(vsd, line); ++i) {
-            cout << line;
-            int pos = line.size() - 12;
-            cout << "line: " << line;
-            cout << "line.size()=" << line.size()  << " line.size() - 12=" << pos << endl;
-            string name = line.substr(0, line.find(","));
             int comma_pos = line.find(",");
-            int size_of_vsd = line.size() - 1 - (comma_pos + 1);
-            cout << "comma_pos: " << comma_pos << " size_of_vsd: " << size_of_vsd << endl;
-            string vsd = line.substr(comma_pos + 1, size_of_vsd);
+            string name = line.substr(0, comma_pos);
+            string vsd = line.substr(comma_pos + 1);
 
-            cout << "name: " << name << ", vsd: " << vsd << ", vsd.size()=" << vsd.size() << endl;
-            cout << "==============" << endl;
+            cout << "name: " << name << ", vsd: " << vsd << endl;
             vsds.emplace(name,vsd);
         }
-
-        std::cout<<"Считанные пары: "<<std::endl;
-
-        for (auto const& [name, vsd] : vsds)
-            std::cout << "name: " << name << ", vsd: " << vsd << std::endl;
 
         return vsds;
     }
 
     // Почти всё можно сделать DEBUG LVL. Главное - сделать тест и чтобы он срабатывал
     void update_xml() {
-        const string vsd_path = string("/mnt/hgfs/shared_folder/") + string("vsd.csv");
+        const string vsd_path = string("vsd.csv");
 
         const auto& vsd_per_names = get_vsds(vsd_path);
         if(vsd_per_names.empty()) {
-            cout << "ВСД не найдены" << endl;
+            cout << "VSD not foungd ERROR" << endl;
             throw std::logic_error("error");
-            close();
+            close(); // не помню, что за close()
         }
 
         // XML open
         pugi::xml_document doc;
         if (doc.load_file("positions.xml")) {
-            cout << "Удалось загрузить XML документ" << endl;
+            cout << "Load XML success" << endl;
         } else {
-            cout << "Не удалось загрузить XML документ" << endl;
+            cout << "Load XML ERROR" << endl;
             throw std::logic_error("error");
             close();
         }
@@ -116,20 +104,20 @@ private slots:
             std::cout << "  vsd name: " << name << std::endl;
             for (pugi::xml_node position_xml: positions_xml.children("position")) {
                 std::string name_in_xml = position_xml.attribute("name_english").as_string();
-                std::cout << "  name_in_xml: " << name_in_xml << std::endl;
+                std::cout << "   name_in_xml: " << name_in_xml << std::endl;
                 if(name == name_in_xml) {
                     position_xml.attribute("vsd").set_value(vsd.c_str());
-                    cout << "name: " << name << endl;
-                    cout << "set vsd to xml: " << vsd << endl;
+                    cout << "    name: " << name << endl;
+                    cout << "    set vsd to xml: " << vsd << endl;
                 }
             }
         }
 
         if(not doc.save_file("positions.xml")) {
-            cout << "Не удалось обновить XML документ" << endl;
+            cout << "Update XML ERROR" << endl;
             throw std::logic_error("error");
         } else {
-            cout << "Удалось обновить XML документ" << endl;
+            cout << "Update XML success" << endl;
         }
     }
 
