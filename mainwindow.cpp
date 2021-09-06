@@ -193,8 +193,8 @@ void MainWindow::on_server_read() {
             //unsigned int ll = 1234;
             //out_array.setNum(ll);
             */
-            uint plan = 10;
-            QString name = "Sir Kavkazkiu";
+            uint plan = ui->plan_1_lineedit->text().toInt();
+            QString name = ui->product_1_name_lineedit->text();
             auto msg = QString("%1,%2").arg(name).arg(plan).toStdString();
             qDebug() << "msg.size(): " << msg.size();
             /*
@@ -363,7 +363,7 @@ MainWindow::~MainWindow() {
 void MainWindow::on_make_template_pushbutton_clicked() {
     //------------------------File choose-----------------------------
     QString ki_name = QFileDialog::getOpenFileName();
-    qDebug() << "Filename: " << ki_name;
+    qDebug() << "Filename ki: " << ki_name;
     qDebug() << "product_name: " << ui->product_1_name_lineedit->text();
     string product_name = ui->product_1_name_lineedit->text().toStdString();
 
