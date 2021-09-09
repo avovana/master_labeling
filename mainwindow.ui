@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>607</width>
+    <width>644</width>
     <height>162</height>
    </rect>
   </property>
@@ -18,17 +18,7 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="5">
-     <widget class="QLabel" name="plan_label">
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>План</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="4">
+    <item row="1" column="3" colspan="2">
      <widget class="QLabel" name="product_name_label">
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
@@ -38,27 +28,7 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="5">
-     <widget class="QLineEdit" name="plan_1_lineedit">
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>10</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="QLabel" name="scaner_status_label">
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>Связь</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="0" colspan="4">
+    <item row="0" column="0" colspan="2">
      <widget class="QPushButton" name="make_template_pushbutton">
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
@@ -68,17 +38,7 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="3" colspan="2">
-     <widget class="QLineEdit" name="product_1_name_lineedit">
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>sir Kavkazskiu</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="6">
+    <item row="1" column="6">
      <widget class="QLabel" name="current_label">
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
@@ -88,53 +48,54 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="1">
-     <widget class="QCheckBox" name="line_1_status_checkbox">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="styleSheet">
-       <string notr="true"/>
-      </property>
+    <item row="1" column="7">
+     <widget class="QLabel" name="column_for_start_label">
       <property name="text">
        <string/>
       </property>
-      <property name="checkable">
-       <bool>false</bool>
-      </property>
      </widget>
     </item>
-    <item row="1" column="7">
-     <widget class="QPushButton" name="line_1_start_pushbutton">
+    <item row="1" column="5">
+     <widget class="QLabel" name="plan_label">
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
       <property name="text">
-       <string>Старт</string>
+       <string>План</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="10">
+     <widget class="QPushButton" name="add_line_pushbutton">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <property name="text">
+       <string>+</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QLabel" name="scaner_status_label">
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>Связь</string>
       </property>
      </widget>
     </item>
     <item row="1" column="0">
-     <widget class="QLabel" name="line_number_1_label">
+     <widget class="QLabel" name="line_number_label">
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
       <property name="text">
-       <string>Линия №1</string>
+       <string>Линия</string>
       </property>
      </widget>
     </item>
-    <item row="1" column="6">
-     <widget class="QLabel" name="current_1_label">
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="8">
+    <item row="1" column="8" colspan="2">
      <widget class="QLabel" name="status_finish_label">
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
@@ -144,21 +105,8 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="8">
-     <widget class="QCheckBox" name="line_1_status_finish_checkbox">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
-      <property name="layoutDirection">
-       <enum>Qt::LeftToRight</enum>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-      <property name="checkable">
-       <bool>false</bool>
-      </property>
-     </widget>
+    <item row="0" column="3">
+     <widget class="QLineEdit" name="product_name_lineedit"/>
     </item>
    </layout>
   </widget>
@@ -167,7 +115,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>607</width>
+     <width>644</width>
      <height>22</height>
     </rect>
    </property>
