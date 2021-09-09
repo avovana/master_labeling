@@ -111,61 +111,40 @@ void MainWindow::on_new_connection() {
 void MainWindow::on_server_read() {
     QTcpSocket* socket = qobject_cast< QTcpSocket* >(sender());
 
-    qDebug() << "slotServerRead start";
-    qDebug() << "mTcpSocket->bytesAvailable(): " << mTcpSocket->bytesAvailable();
+    qDebug() << "bytes available : " << mTcpSocket->bytesAvailable();
 
     QByteArray array;
-    QBitArray bitarray;
-    while(mTcpSocket->bytesAvailable()>0) // считаю, что где-то вглубине сообщение, которое могло бы быть разбито собирается, и здесь сигнал выставляется, когда оно уже полное
-    {
-        //QByteArray array = mTcpSocket->readAll();
+    QByteArray array_header;
 
-        //qDebug() << "array: " << array;
-        //qDebug() << "array.size(): " << array.size();
-        //std::cout << "array.toStdString: " << array.toStdString();
-        //qDebug() << "array.toStdString.size(): " << array.toStdString().size();
-        //mTcpSocket->write(array);
-        array = mTcpSocket->readAll();
-//        qDebug() << "array: " << array;
-        qDebug() << "array: " << bitarray ;
+    // считаю, что где-то вглубине сообщение, которое могло бы быть разбито собирается, и здесь сигнал выставляется, когда оно уже полное // no no ты был не прав... приходит по кускам...
+    array_header = mTcpSocket->read(4);
+    qDebug() << "array_header: " << array_header;
+
+    uint32_t header;
+    QDataStream ds_header(array_header);
+    ds_header >> header;
+
+    qDebug() << "header: " << header;
+    uint32_t bytes_to_read = header;
+
+    while(bytes_to_read > 0) {
+        QByteArray read_bytes = mTcpSocket->readAll();
+
+        array.append(read_bytes);
+        bytes_to_read -= read_bytes.size();
+
+        qDebug() << "bytes to read left: " << bytes_to_read;
     }
-
-    for(int i = 0; i < array.count(); ++i) {
-      qDebug() << QString::number(array[i], 16);
-    }
-
-    //Сработало норм:
-    //QString DataAsString = QString(array);
-    //qDebug() << "str: " << DataAsString;
-    //qDebug() << "str.size(): " << DataAsString.size();
-
-    //auto scans = DataAsString.split('\n');
-    //qDebug() << "scans: " << scans;
-
-    //std::ofstream out("output.txt");
-    //for ( const auto& scan : scans ) {
-    //qDebug() << "   scan:   " << scan;
-    //    out << scan.toStdString();
-    //}
-    //out.close();
-
-   // QDataStream ds(array);
-   // QString str;
-   // ds >> str;
-   // qDebug() << "str: " << str;
-   // Считать в большую строку. Пробегаться по строке до конца встречая \n - деля на под строки и записывая в файл
 
     QDataStream ds(array);
 
-    uint32_t header;
     uint8_t msg_type;
     uint8_t line_number;
 
-    ds >> header;
     ds >> msg_type;
     ds >> line_number;
 
-    qDebug() << "header: " << header;
+
     qDebug() << "msg_type: " << msg_type;
     qDebug() << "line_number: " << line_number;
     qDebug() << "============";
@@ -330,9 +309,13 @@ void MainWindow::on_server_read() {
         break;
         case 3:
         {
+            qDebug() << "Receive file...";
             for(auto & descriptor : lines_descriptors) { // find with algorithm
                 if(line_number == descriptor.line_number) {
+                    qDebug() << "1";
                     QByteArray buffer(header - 2, Qt::Uninitialized);
+
+                    qDebug() << "2";
 
                     ds.readRawData(buffer.data(), header - 2);
                     QString scan(buffer);
