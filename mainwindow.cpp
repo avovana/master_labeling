@@ -116,7 +116,13 @@ void MainWindow::on_server_read() {
     QByteArray array;
     QByteArray array_header;
 
-    // считаю, что где-то вглубине сообщение, которое могло бы быть разбито собирается, и здесь сигнал выставляется, когда оно уже полное // no no ты был не прав... приходит по кускам...
+    while(socket->bytesAvailable() < 4) {
+        if (!socket->waitForReadyRead()) {
+            qDebug() << "waitForReadyRead() timed out";
+            return;
+        }
+    }
+
     array_header = mTcpSocket->read(4);
     qDebug() << "array_header: " << array_header;
 
@@ -128,7 +134,12 @@ void MainWindow::on_server_read() {
     uint32_t bytes_to_read = header;
 
     while(bytes_to_read > 0) {
-        QByteArray read_bytes = mTcpSocket->readAll();
+        if (!socket->waitForReadyRead(100)) {
+            qDebug() << "waitForReadyRead() timed out";
+        }
+
+        QByteArray read_bytes = socket->read(bytes_to_read);
+        qDebug() << "read_bytes.size(): " << read_bytes.size();
 
         array.append(read_bytes);
         bytes_to_read -= read_bytes.size();
