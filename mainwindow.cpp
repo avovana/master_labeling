@@ -44,15 +44,15 @@ MainWindow::MainWindow(QWidget *parent)
 
 
 void MainWindow::on_new_connection() {
-    mTcpSocket = mTcpServer->nextPendingConnection();
+    QTcpSocket * new_socket = mTcpServer->nextPendingConnection();
 
-    sockets.push_back(mTcpSocket);
+    sockets.push_back(new_socket);
     qDebug() << "Local:";
-    qDebug() << mTcpSocket->localAddress();
-    qDebug() << mTcpSocket->localPort();
+    qDebug() << new_socket->localAddress();
+    qDebug() << new_socket->localPort();
     qDebug() << "Peer:";
-    qDebug() << mTcpSocket->peerAddress();
-    qDebug() << mTcpSocket->peerPort();
+    qDebug() << new_socket->peerAddress();
+    qDebug() << new_socket->peerPort();
     /* QByteArray ba;
       ba.resize(4);
       ba[0] = 0x04;
@@ -103,62 +103,56 @@ void MainWindow::on_new_connection() {
         mTcpSocket->write(ba);
         mTcpSocket->write("1234");
     */
-    connect(mTcpSocket, &QTcpSocket::readyRead, this, &MainWindow::on_server_read);
-    connect(mTcpSocket, &QTcpSocket::disconnected, this, &MainWindow::on_client_disconnected);
+    connect(new_socket, &QTcpSocket::readyRead, this, &MainWindow::on_server_read);
+    connect(new_socket, &QTcpSocket::disconnected, this, &MainWindow::on_client_disconnected);
 }
 
 
 void MainWindow::on_server_read() {
     QTcpSocket* socket = qobject_cast< QTcpSocket* >(sender());
 
-    qDebug() << "bytes available : " << socket->bytesAvailable();
+    qDebug() << "bytes_available=" << socket->bytesAvailable();
 
     QByteArray array;
     QByteArray array_header;
 
-    while(socket->bytesAvailable() < 4) {
-        if (!socket->waitForReadyRead()) {
-            qDebug() << "waitForReadyRead() timed out";
-            return;
-        }
-    }
+    while(socket->bytesAvailable() < 4)
+        if (!socket->waitForReadyRead(10))
+            qDebug() << "waiting header bytes timed out INFO";
 
-    array_header = mTcpSocket->read(4);
-    qDebug() << "array_header: " << array_header;
+    array_header = socket->read(4);
+    qDebug() << "array_header=" << array_header;
 
     uint32_t header;
     QDataStream ds_header(array_header);
     ds_header >> header;
 
-    qDebug() << "header: " << header;
+    qDebug() << "header=" << header;
     uint32_t bytes_to_read = header;
+    uint32_t data_size = header - 2;
 
     while(bytes_to_read > 0) {
-        if (!socket->waitForReadyRead(100)) {
-            qDebug() << "waitForReadyRead() timed out";
-        }
+        if (!socket->waitForReadyRead(100))
+            qDebug() << "waiting bytes timed out INFO";
 
-        QByteArray read_bytes = socket->read(bytes_to_read);
-        qDebug() << "read_bytes.size(): " << read_bytes.size();
+        QByteArray read_bytes_chunk = socket->read(bytes_to_read);
+        qDebug() << "read_bytes_chunk=" << read_bytes_chunk.size();
 
-        array.append(read_bytes);
-        bytes_to_read -= read_bytes.size();
+        array.append(read_bytes_chunk);
+        bytes_to_read -= read_bytes_chunk.size();
 
-        qDebug() << "bytes to read left: " << bytes_to_read;
+        qDebug() << "bytes_to_read=" << bytes_to_read;
     }
 
-    QDataStream ds(array);
+    QDataStream received_bytes(array);
 
     uint8_t msg_type;
     uint8_t line_number;
 
-    ds >> msg_type;
-    ds >> line_number;
+    received_bytes >> msg_type;
+    received_bytes >> line_number;
 
-
-    qDebug() << "msg_type: " << msg_type;
-    qDebug() << "line_number: " << line_number;
-    qDebug() << "============";
+    qDebug() << "msg_type=" << msg_type << " line_number=" << line_number << " INFO";
 
     auto descriptor_itr = std::find_if(begin(lines_descriptors), end(lines_descriptors),
                                     [&line_number](auto descriptor) { return line_number == descriptor.line_number; });
@@ -167,7 +161,6 @@ void MainWindow::on_server_read() {
         qDebug() << "Line doesn't exist! ERROR" << msg_type;
         return;
     }
-
 
     switch(msg_type) {
         case 1: // Info request
@@ -184,7 +177,7 @@ void MainWindow::on_server_read() {
             uint plan = descriptor_itr->plan_lineedit->text().toInt();
             QString name = descriptor_itr->product_name_lineedit->text();
             auto msg = QString("%1,%2").arg(name).arg(plan).toStdString();
-            qDebug() << "msg.size(): " << msg.size();
+            qDebug() << "msg_size=" << msg.size();
 
             QByteArray out_array;
             QDataStream stream(&out_array, QIODevice::WriteOnly);
@@ -198,11 +191,11 @@ void MainWindow::on_server_read() {
               qDebug() << QString::number(out_array[i], 16);
             }
 
-            qDebug() << "out_array: " << out_array;
+            qDebug() << "out_array=" << out_array;
             for(int i = 0; i < out_array.count(); ++i) {
               qDebug() << out_array[i];
             }
-            qDebug() << "out_array.size(): " << out_array.size();
+            qDebug() << "out_array_size=" << out_array.size();
 
             descriptor_itr->socket->write(out_array);
         /*
@@ -299,16 +292,13 @@ void MainWindow::on_server_read() {
 
         case 2: // Scan receive
         {
+            QByteArray buffer(data_size, Qt::Uninitialized);
 
-            QByteArray buffer(header - 2, Qt::Uninitialized);
-
-            ds.readRawData(buffer.data(), header - 2);
+            received_bytes.readRawData(buffer.data(), data_size);
             QString scan(buffer);
 
-            qDebug() << "scan: " << scan;
-            qDebug() << "scan.size(): " << scan.size();
-            std::cout << "scan.toStdString(): " << scan.toStdString();
-            qDebug() << "scan.toStdString(): " << scan.toStdString().size();
+            qDebug() << "    scan_size=" << scan.size() << " scan=" << scan;
+            std::cout << "std scan_scan_size=" << scan.toStdString().size() << " scan=" << scan.toStdString();
 
             std::ofstream out("scans_current_" + descriptor_itr->product_name_lineedit->text().toStdString() + ".txt", std::ios_base::app);
             out << scan.toStdString() << endl;
@@ -319,10 +309,9 @@ void MainWindow::on_server_read() {
         break;
         case 3:
         {
-            qDebug() << "Receive file...";
-            QByteArray buffer(header - 2, Qt::Uninitialized);
+            QByteArray buffer(data_size, Qt::Uninitialized);
 
-            ds.readRawData(buffer.data(), header - 2);
+            received_bytes.readRawData(buffer.data(), data_size);
             QString scan(buffer);
 
             qDebug() << "file save...";
@@ -341,7 +330,7 @@ void MainWindow::on_server_read() {
             strftime(bufferDate, sizeof(bufferDate), "%d-%m-%Y", timeinfo);
             std::string date(bufferDate);
 
-            qDebug() << "date: " << date.c_str();
+            qDebug() << "date=" << date.c_str();
 
             std::ofstream out(date + "_ki_line_number_" + to_string(line_number) + ".txt");
             out << scan.toStdString();
@@ -351,7 +340,7 @@ void MainWindow::on_server_read() {
             palette.setColor(QPalette().Base, QColor("#23F617"));
             descriptor_itr->line_status_finish_checkbox->setPalette(palette);
 
-            qDebug() << "Статус проставлен";
+            qDebug() << "file save done";
         }
         break;
     }
@@ -359,7 +348,8 @@ void MainWindow::on_server_read() {
 }
 
 void MainWindow::on_client_disconnected() {
-    mTcpSocket->close();
+    QTcpSocket* socket = qobject_cast< QTcpSocket* >(sender());
+    socket->close();
 }
 
 
@@ -380,10 +370,10 @@ void MainWindow::on_make_template_pushbutton_clicked() {
 
     pugi::xml_document doc;
     if (!doc.load_file("positions.xml")) {
-        cout << "Не удалось загрузить XML документ" << endl;
+        cout << "Load XML positions.xml FAILED" << endl;
         return;
     } else {
-        cout << "Удалось загрузить XML документ" << endl;
+        cout << "Load XML positions.xml SUCCESS" << endl;
     }
 
     pugi::xml_node inn_xml = doc.child("resources").child("inn");
@@ -392,13 +382,13 @@ void MainWindow::on_make_template_pushbutton_clicked() {
     pugi::xml_node positions_xml = doc.child("resources").child("input");
 
     if (positions_xml.children("position").begin() == positions_xml.children("position").end()) {
-        cout << "ОШИБКА! В документе нет позиций!" << endl;
+        cout << "Positions in positions.xml absent ERROR" << endl;
         return;
     }
 
     for (pugi::xml_node position_xml: positions_xml.children("position")) {
         std::string position_name = position_xml.attribute("name_english").as_string();
-        std::cout << "position_name: " << position_name << endl;
+        std::cout << "position_name=" << position_name << endl;
 
         if(product_name == position_name) {
             position = Position{position_xml.attribute("code_tn_ved").as_string(),
@@ -412,7 +402,7 @@ void MainWindow::on_make_template_pushbutton_clicked() {
                                          position_xml.attribute("expected").as_int(),
                                          position_xml.attribute("current").as_int()};
 
-            std::cout << "Считана позиция: " << endl << position << endl;
+            std::cout << "position=" << endl << position << endl;
         }
     }
     //------------------------Make file-----------------------------
@@ -507,14 +497,6 @@ void MainWindow::on_line_1_start_pushbutton_clicked() {
 void MainWindow::send_ready_to_slave() {
     QPushButton * senderButton = qobject_cast<QPushButton *>(this->sender());
 
-    for(auto & descriptor : lines_descriptors) { // find with algorithm
-        if(senderButton == descriptor.line_start_pushbutton) {
-            qDebug() << " found! Line number: " << descriptor.line_number;
-
-
-        }
-    }
-
     QByteArray out_array;
     QDataStream stream(&out_array, QIODevice::WriteOnly);
     unsigned int out_msg_size = sizeof(unsigned int);
@@ -524,7 +506,22 @@ void MainWindow::send_ready_to_slave() {
 
     qDebug() << " on_line_1_start_pushbutton_clicked out_array.size(): " << out_array.size();
 
-    mTcpSocket->write(out_array);
+    auto descriptor_itr = std::find_if(begin(lines_descriptors), end(lines_descriptors),
+                                    [senderButton](auto descriptor) { return senderButton == descriptor.line_start_pushbutton; });
+
+    if(descriptor_itr == end(lines_descriptors)) {
+        qDebug() << "Line doesn't exist! ERROR";
+        return;
+    }
+
+    qDebug() << "send to line=" << descriptor_itr->line_number;
+
+    if(descriptor_itr->socket == nullptr) {
+        qDebug() << "Connection wasn't established ERROR";
+        return;
+    }
+
+    descriptor_itr->socket->write(out_array);
 }
 
 void MainWindow::on_add_line_pushbutton_clicked() {
@@ -545,6 +542,7 @@ MainWindow::LineDescriptor::LineDescriptor(Ui::MainWindow *ui_, uint line_number
     line_start_pushbutton = new QPushButton();
     line_start_pushbutton->setText("Старт");
     line_status_finish_checkbox = new QCheckBox();
+    socket = nullptr;
 
     add_to_ui();
 }
