@@ -46,7 +46,7 @@ struct LineDescriptor {
     void add_to_ui();
 
     Ui::MainWindow *ui;
-    uint line_number;
+    uint8_t line_number;
     QLabel *line_number_label;
     QCheckBox *line_status_checkbox;
     QLineEdit *product_name_lineedit;

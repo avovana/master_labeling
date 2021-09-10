@@ -111,7 +111,7 @@ void MainWindow::on_new_connection() {
 void MainWindow::on_server_read() {
     QTcpSocket* socket = qobject_cast< QTcpSocket* >(sender());
 
-    qDebug() << "bytes available : " << mTcpSocket->bytesAvailable();
+    qDebug() << "bytes available : " << socket->bytesAvailable();
 
     QByteArray array;
     QByteArray array_header;
@@ -160,48 +160,51 @@ void MainWindow::on_server_read() {
     qDebug() << "line_number: " << line_number;
     qDebug() << "============";
 
+    auto descriptor_itr = std::find_if(begin(lines_descriptors), end(lines_descriptors),
+                                    [&line_number](auto descriptor) { return line_number == descriptor.line_number; });
+
+    if(descriptor_itr == end(lines_descriptors)) {
+        qDebug() << "Line doesn't exist! ERROR" << msg_type;
+        return;
+    }
+
+
     switch(msg_type) {
         case 1: // Info request
         {
-            for(auto & descriptor : lines_descriptors) { // find with algorithm
-                if(line_number == descriptor.line_number) {
-                    qDebug() << " found! Line number: " << descriptor.line_number;
-                    descriptor.socket = socket;
+            descriptor_itr->socket = socket;
 
-                    descriptor.line_status_checkbox->setChecked(true);
-                    descriptor.line_status_checkbox->setEnabled(false);
+            descriptor_itr->line_status_checkbox->setChecked(true);
+            descriptor_itr->line_status_checkbox->setEnabled(false);
 
-                    auto palette = QPalette();
-                    palette.setColor(QPalette().Base, QColor("#23F617"));
-                    descriptor.line_status_checkbox->setPalette(palette);
+            auto palette = QPalette();
+            palette.setColor(QPalette().Base, QColor("#23F617"));
+            descriptor_itr->line_status_checkbox->setPalette(palette);
 
-                    uint plan = descriptor.plan_lineedit->text().toInt();
-                    QString name = descriptor.product_name_lineedit->text();
-                    auto msg = QString("%1,%2").arg(name).arg(plan).toStdString();
-                    qDebug() << "msg.size(): " << msg.size();
+            uint plan = descriptor_itr->plan_lineedit->text().toInt();
+            QString name = descriptor_itr->product_name_lineedit->text();
+            auto msg = QString("%1,%2").arg(name).arg(plan).toStdString();
+            qDebug() << "msg.size(): " << msg.size();
 
-                    QByteArray out_array;
-                    QDataStream stream(&out_array, QIODevice::WriteOnly);
-                    unsigned int out_msg_size = msg.size() + sizeof(unsigned int);
-                    unsigned int type = 4;
-                    stream << out_msg_size;
-                    stream << type;
-                    stream.writeRawData(msg.c_str(), msg.size());
+            QByteArray out_array;
+            QDataStream stream(&out_array, QIODevice::WriteOnly);
+            unsigned int out_msg_size = msg.size() + sizeof(unsigned int);
+            unsigned int type = 4;
+            stream << out_msg_size;
+            stream << type;
+            stream.writeRawData(msg.c_str(), msg.size());
 
-                    for(int i = 0; i < out_array.count(); ++i) {
-                      qDebug() << QString::number(out_array[i], 16);
-                    }
-
-                    qDebug() << "out_array: " << out_array;
-                    for(int i = 0; i < out_array.count(); ++i) {
-                      qDebug() << out_array[i];
-                    }
-                    qDebug() << "out_array.size(): " << out_array.size();
-
-                    descriptor.socket->write(out_array);
-
-                }
+            for(int i = 0; i < out_array.count(); ++i) {
+              qDebug() << QString::number(out_array[i], 16);
             }
+
+            qDebug() << "out_array: " << out_array;
+            for(int i = 0; i < out_array.count(); ++i) {
+              qDebug() << out_array[i];
+            }
+            qDebug() << "out_array.size(): " << out_array.size();
+
+            descriptor_itr->socket->write(out_array);
         /*
         switch(line_number) {
             case 1:
@@ -294,73 +297,61 @@ void MainWindow::on_server_read() {
         }
         break;
 
-        case 2:
+        case 2: // Scan receive
         {
-            for(auto & descriptor : lines_descriptors) { // find with algorithm
-                if(line_number == descriptor.line_number) {
-                    QByteArray buffer(header - 2, Qt::Uninitialized);
 
-                    ds.readRawData(buffer.data(), header - 2);
-                    QString scan(buffer);
+            QByteArray buffer(header - 2, Qt::Uninitialized);
 
-                    qDebug() << "scan: " << scan;
-                    qDebug() << "scan.size(): " << scan.size();
-                    std::cout << "scan.toStdString(): " << scan.toStdString();
-                    qDebug() << "scan.toStdString(): " << scan.toStdString().size();
+            ds.readRawData(buffer.data(), header - 2);
+            QString scan(buffer);
 
-                    std::ofstream out("scans_.txt");
-                    out << scan.toStdString();
-                    out.close();
+            qDebug() << "scan: " << scan;
+            qDebug() << "scan.size(): " << scan.size();
+            std::cout << "scan.toStdString(): " << scan.toStdString();
+            qDebug() << "scan.toStdString(): " << scan.toStdString().size();
 
-                    descriptor.current_label->setText(QString::number(++current));
-                }
-            }
+            std::ofstream out("scans_current_" + descriptor_itr->product_name_lineedit->text().toStdString() + ".txt", std::ios_base::app);
+            out << scan.toStdString() << endl;
+            out.close();
 
+            descriptor_itr->current_label->setText(QString::number(++current));
         }
         break;
         case 3:
         {
             qDebug() << "Receive file...";
-            for(auto & descriptor : lines_descriptors) { // find with algorithm
-                if(line_number == descriptor.line_number) {
-                    qDebug() << "1";
-                    QByteArray buffer(header - 2, Qt::Uninitialized);
+            QByteArray buffer(header - 2, Qt::Uninitialized);
 
-                    qDebug() << "2";
+            ds.readRawData(buffer.data(), header - 2);
+            QString scan(buffer);
 
-                    ds.readRawData(buffer.data(), header - 2);
-                    QString scan(buffer);
+            qDebug() << "file save...";
+            qDebug() << scan;
+            auto pos = scan.lastIndexOf(QChar('\n'));
+            if(pos != -1)
+                scan.truncate(pos);
 
-                    qDebug() << "file save...";
-                    qDebug() << scan;
-                    auto pos = scan.lastIndexOf(QChar('\n'));
-                    if(pos != -1)
-                        scan.truncate(pos);
+            time_t rawtime;
+            struct tm * timeinfo;
+            char bufferDate[80];
 
-                    time_t rawtime;
-                    struct tm * timeinfo;
-                    char bufferDate[80];
+            time (&rawtime);
+            timeinfo = localtime(&rawtime);
 
-                    time (&rawtime);
-                    timeinfo = localtime(&rawtime);
+            strftime(bufferDate, sizeof(bufferDate), "%d-%m-%Y", timeinfo);
+            std::string date(bufferDate);
 
-                    strftime(bufferDate, sizeof(bufferDate), "%d-%m-%Y", timeinfo);
-                    std::string date(bufferDate);
+            qDebug() << "date: " << date.c_str();
 
-                    qDebug() << "date: " << date.c_str();
+            std::ofstream out(date + "_ki_line_№" + to_string(line_number) + ".txt");
+            out << scan.toStdString();
+            out.close();
 
-                    std::ofstream out(date + "_ki_line_№" + to_string(line_number) + ".txt");
-                    out << scan.toStdString();
-                    out.close();
+            auto palette = QPalette();
+            palette.setColor(QPalette().Base, QColor("#23F617"));
+            descriptor_itr->line_status_finish_checkbox->setPalette(palette);
 
-                    auto palette = QPalette();
-                    palette.setColor(QPalette().Base, QColor("#23F617"));
-                    descriptor.line_status_finish_checkbox->setPalette(palette);
-
-                    qDebug() << "Статус проставлен";
-                }
-            }
-
+            qDebug() << "Статус проставлен";
         }
         break;
     }
@@ -548,6 +539,7 @@ MainWindow::LineDescriptor::LineDescriptor(Ui::MainWindow *ui_, uint line_number
     line_number_label->setText(QString::number(line_number_));
     line_status_checkbox = new QCheckBox();
     product_name_lineedit = new QLineEdit();
+    product_name_lineedit->setText("sir Kavkazskiu");
     plan_lineedit = new QLineEdit();
     current_label = new QLineEdit();
     line_start_pushbutton = new QPushButton();
