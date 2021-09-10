@@ -343,7 +343,7 @@ void MainWindow::on_server_read() {
 
             qDebug() << "date: " << date.c_str();
 
-            std::ofstream out(date + "_ki_line_№" + to_string(line_number) + ".txt");
+            std::ofstream out(date + "_ki_line_number_" + to_string(line_number) + ".txt");
             out << scan.toStdString();
             out.close();
 
