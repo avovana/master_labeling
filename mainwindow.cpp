@@ -307,7 +307,7 @@ void MainWindow::on_server_read() {
             descriptor_itr->current_label->setText(QString::number(++current));
         }
         break;
-        case 3:
+        case 3: // File receive
         {
             QByteArray buffer(data_size, Qt::Uninitialized);
 
@@ -332,7 +332,9 @@ void MainWindow::on_server_read() {
 
             qDebug() << "date=" << date.c_str();
 
-            std::ofstream out(date + "_ki_line_number_" + to_string(line_number) + ".txt");
+            auto product_name = descriptor_itr->product_name_lineedit->text().toStdString();
+            const string ki_path = std::string("\\\\192.168.0.21\\shared_folder\\") + date + product_name + "_ki_file_line_number_" + to_string(line_number) + ".txt"; // to config
+            std::ofstream out(ki_path);
             out << scan.toStdString();
             out.close();
 
@@ -359,11 +361,17 @@ MainWindow::~MainWindow() {
 
 
 void MainWindow::on_make_template_pushbutton_clicked() {
+    qDebug() << "on_make_template_pushbutton_clicked";
     //------------------------File choose-----------------------------
     QString ki_name = QFileDialog::getOpenFileName();
     qDebug() << "Filename ki: " << ki_name;
-    qDebug() << "product_name: " << ui->product_name_lineedit->text();
-    string product_name = ui->product_name_lineedit->text().toStdString();
+
+    if(ki_name.isEmpty())
+        return;
+
+    auto product_name_ui = ui->product_name_for_template_combobox->currentText();
+    qDebug() << "product_name: " << product_name_ui;
+    string product_name = product_name_ui.toStdString();
 
     //------------------------Download config-----------------------------
     Position position;
@@ -430,7 +438,7 @@ void MainWindow::on_make_template_pushbutton_clicked() {
     in.close();
     // Создать файл
 
-    string filename = std::string(date_buffer) + " " + product_name + " " + to_string(sTotal)+ ".csv";
+    string filename = std::string("\\\\192.168.0.21\\shared_folder\\") + std::string(date_buffer) + " " + product_name + " " + to_string(sTotal)+ ".csv"; // to config
 
     std::ofstream template_file;
 
@@ -535,13 +543,15 @@ MainWindow::LineDescriptor::LineDescriptor(Ui::MainWindow *ui_, uint line_number
     line_number_label = new QLabel();
     line_number_label->setText(QString::number(line_number_));
     line_status_checkbox = new QCheckBox();
+    line_status_checkbox->setEnabled(false);
     product_name_lineedit = new QLineEdit();
-    product_name_lineedit->setText("sir Kavkazskiu");
+    product_name_lineedit->setText("maslo");
     plan_lineedit = new QLineEdit();
     current_label = new QLineEdit();
     line_start_pushbutton = new QPushButton();
     line_start_pushbutton->setText("Старт");
     line_status_finish_checkbox = new QCheckBox();
+    line_status_finish_checkbox->setEnabled(false);
     socket = nullptr;
 
     add_to_ui();
@@ -555,4 +565,76 @@ void MainWindow::LineDescriptor::add_to_ui() {
     ui->gridLayout->addWidget(current_label, 3,6);
     ui->gridLayout->addWidget(line_start_pushbutton, 3,7);
     ui->gridLayout->addWidget(line_status_finish_checkbox, 3,8);
+}
+
+std::map<std::string, std::string> MainWindow::get_vsds(const std::string & vsd_path) {
+    std::ifstream vsd;
+
+    cout << "vsd_path=" << vsd_path << endl;
+
+    vsd.open(vsd_path);
+    if(not vsd.is_open()) {
+        std::cout<<"Open vsd.csv ERROR"<<std::endl;
+        return {};
+    } else {
+        std::cout<<"Open vsd.csv success"<<std::endl;
+    }
+
+    std::map<std::string, std::string> vsds;
+    std::string line;
+    for (int i = 0; std::getline(vsd, line); ++i) {
+        int comma_pos = line.find(",");
+        string name = line.substr(0, comma_pos);
+        string vsd = line.substr(comma_pos + 1);
+
+        cout << "name: " << name << ", vsd: " << vsd << endl;
+        vsds.emplace(name,vsd);
+    }
+
+    return vsds;
+}
+
+// Почти всё можно сделать DEBUG LVL. Главное - сделать тест и чтобы он срабатывал
+void MainWindow::update_xml() {
+    const string vsd_path = std::string("\\\\192.168.0.21\\shared_folder\\") + string("vsd.csv"); // to config
+
+    const auto& vsd_per_names = get_vsds(vsd_path);
+    if(vsd_per_names.empty()) {
+        cout << "VSD not found ERROR" << endl;
+        throw std::logic_error("error");
+        close(); // не помню, что за close()
+    }
+
+    // XML open
+    pugi::xml_document doc;
+    if (doc.load_file("positions.xml")) {
+        cout << "Load XML success" << endl;
+    } else {
+        cout << "Load XML ERROR" << endl;
+        throw std::logic_error("error");
+        close();
+    }
+
+    pugi::xml_node positions_xml = doc.child("resources").child("input");
+
+    for (auto const& [name, vsd] : vsd_per_names) {
+        std::cout << "  vsd name: " << name << std::endl;
+        for (pugi::xml_node position_xml: positions_xml.children("position")) {
+            std::string name_in_xml = position_xml.attribute("name_english").as_string();
+            std::cout << "   name_in_xml: " << name_in_xml << std::endl;
+            if(name == name_in_xml) {
+                position_xml.attribute("vsd").set_value(vsd.c_str());
+                cout << "    name: " << name << endl;
+                ui->product_name_for_template_combobox->addItem(QString::fromStdString(name));
+                cout << "    set vsd to xml: " << vsd << endl;
+            }
+        }
+    }
+
+    if(not doc.save_file("positions.xml")) {
+        cout << "Update XML ERROR" << endl;
+        throw std::logic_error("error");
+    } else {
+        cout << "Update XML success" << endl;
+    }
 }
