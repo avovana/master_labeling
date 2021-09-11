@@ -333,7 +333,7 @@ void MainWindow::on_server_read() {
             qDebug() << "date=" << date.c_str();
 
             auto product_name = descriptor_itr->product_name_lineedit->text().toStdString();
-            const string ki_path = std::string("\\\\192.168.0.21\\shared_folder\\") + date + product_name + "_ki_file_line_number_" + to_string(line_number) + ".txt"; // to config
+            const string ki_path = std::string("\\\\192.168.0.21\\shared_folder\\ki\\") + date + product_name + "_ki_file_line_number_" + to_string(line_number) + ".txt"; // to config
             std::ofstream out(ki_path);
             out << scan.toStdString();
             out.close();
@@ -438,7 +438,7 @@ void MainWindow::on_make_template_pushbutton_clicked() {
     in.close();
     // Создать файл
 
-    string filename = std::string("\\\\192.168.0.21\\shared_folder\\") + std::string(date_buffer) + " " + product_name + " " + to_string(sTotal)+ ".csv"; // to config
+    string filename = std::string("\\\\192.168.0.21\\shared_folder\\input\\") + std::string(date_buffer) + " " + product_name + " " + to_string(sTotal)+ ".csv"; // to config
 
     std::ofstream template_file;
 
