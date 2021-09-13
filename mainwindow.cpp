@@ -363,7 +363,7 @@ MainWindow::~MainWindow() {
 void MainWindow::on_make_template_pushbutton_clicked() {
     qDebug() << "on_make_template_pushbutton_clicked";
     //------------------------File choose-----------------------------
-    QString ki_name = QFileDialog::getOpenFileName();
+    QString ki_name = QFileDialog::getOpenFileName(this, "Ki", "\\\\192.168.0.21\\shared_folder\\ki\\");
     qDebug() << "Filename ki: " << ki_name;
 
     if(ki_name.isEmpty())
