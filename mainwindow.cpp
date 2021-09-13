@@ -332,7 +332,9 @@ void MainWindow::on_server_read() {
 
             qDebug() << "date=" << date.c_str();
 
-            std::ofstream out(date + "_ki_line_number_" + to_string(line_number) + ".txt");
+            std::string filename = std::string("\\\\192.168.0.21\\shared_folder\\input") + date + "_ki_line_number_" + to_string(line_number) + ".txt";
+
+            std::ofstream out(filename);
             out << scan.toStdString();
             out.close();
 
@@ -360,7 +362,7 @@ MainWindow::~MainWindow() {
 
 void MainWindow::on_make_template_pushbutton_clicked() {
     //------------------------File choose-----------------------------
-    QString ki_name = QFileDialog::getOpenFileName();
+    QString ki_name = QFileDialog::getOpenFileName(this, "Ki", "\\\\192.168.0.21\\shared_folder\\input");
     qDebug() << "Filename ki: " << ki_name;
     qDebug() << "product_name: " << ui->product_name_combobox->currentText();
     string product_name = ui->product_name_combobox->currentText().toStdString();
@@ -543,7 +545,7 @@ MainWindow::LineDescriptor::LineDescriptor(Ui::MainWindow *ui_, uint line_number
     line_status_checkbox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     line_status_checkbox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     product_name_lineedit = new QLineEdit();
-    product_name_lineedit->setText("sir Kavkazskiu");
+    product_name_lineedit->setText("maslo");
     product_name_lineedit->setStyleSheet("QLineEdit{font-size: 24px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
     product_name_lineedit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     plan_lineedit = new QLineEdit();
