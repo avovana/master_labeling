@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>644</width>
+    <width>735</width>
     <height>162</height>
    </rect>
   </property>
@@ -18,8 +18,8 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="1" column="3" colspan="2">
-     <widget class="QLabel" name="product_name_label">
+    <item row="1" column="5">
+     <widget class="QLabel" name="plan_label">
       <property name="font">
        <font>
         <pointsize>14</pointsize>
@@ -29,7 +29,7 @@
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
       <property name="text">
-       <string>Наименование продукции</string>
+       <string>План</string>
       </property>
      </widget>
     </item>
@@ -63,15 +63,8 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="7">
-     <widget class="QLabel" name="column_for_start_label">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="5">
-     <widget class="QLabel" name="plan_label">
+    <item row="1" column="1">
+     <widget class="QLabel" name="scaner_status_label">
       <property name="font">
        <font>
         <pointsize>14</pointsize>
@@ -81,7 +74,7 @@
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
       <property name="text">
-       <string>План</string>
+       <string>Связь</string>
       </property>
      </widget>
     </item>
@@ -95,23 +88,11 @@
         <pointsize>14</pointsize>
        </font>
       </property>
-      <property name="text">
-       <string>+</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="1">
-     <widget class="QLabel" name="scaner_status_label">
-      <property name="font">
-       <font>
-        <pointsize>14</pointsize>
-       </font>
-      </property>
       <property name="styleSheet">
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
       <property name="text">
-       <string>Связь</string>
+       <string>+</string>
       </property>
      </widget>
     </item>
@@ -130,6 +111,28 @@
       </property>
      </widget>
     </item>
+    <item row="1" column="3" colspan="2">
+     <widget class="QLabel" name="product_name_label">
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>Наименование продукции</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="7">
+     <widget class="QLabel" name="column_for_start_label">
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </item>
     <item row="1" column="8" colspan="2">
      <widget class="QLabel" name="status_finish_label">
       <property name="font">
@@ -145,12 +148,15 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="3">
-     <widget class="QLineEdit" name="product_name_lineedit">
+    <item row="0" column="3" colspan="2">
+     <widget class="QComboBox" name="product_name_combobox">
       <property name="font">
        <font>
         <pointsize>14</pointsize>
        </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
      </widget>
     </item>
@@ -161,7 +167,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>644</width>
+     <width>735</width>
      <height>22</height>
     </rect>
    </property>
