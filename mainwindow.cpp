@@ -533,15 +533,32 @@ void MainWindow::on_add_line_pushbutton_clicked() {
 
 MainWindow::LineDescriptor::LineDescriptor(Ui::MainWindow *ui_, uint line_number_) : ui(ui_), line_number(line_number_) {
     line_number_label = new QLabel();
+    line_number_label->setStyleSheet("QLabel{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
     line_number_label->setText(QString::number(line_number_));
+    line_number_label->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+    line_number_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     line_status_checkbox = new QCheckBox();
+    line_status_checkbox->setStyleSheet("QCheckBox{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);}");
+    line_status_checkbox->setEnabled(false);
+    line_status_checkbox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    line_status_checkbox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     product_name_lineedit = new QLineEdit();
     product_name_lineedit->setText("sir Kavkazskiu");
+    product_name_lineedit->setStyleSheet("QLineEdit{font-size: 24px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
+    product_name_lineedit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     plan_lineedit = new QLineEdit();
+    plan_lineedit->setStyleSheet("QLineEdit{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
+    plan_lineedit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     current_label = new QLineEdit();
+    current_label->setStyleSheet("QLineEdit{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
+    current_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     line_start_pushbutton = new QPushButton();
     line_start_pushbutton->setText("Старт");
+    line_start_pushbutton->setStyleSheet("QPushButton{font-size: 14px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
+    line_start_pushbutton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     line_status_finish_checkbox = new QCheckBox();
+    line_status_finish_checkbox->setEnabled(false);
+    line_status_finish_checkbox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     socket = nullptr;
 
     add_to_ui();
