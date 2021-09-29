@@ -594,13 +594,15 @@ MainWindow::LineDescriptor::LineDescriptor(Ui::MainWindow *ui_, uint line_number
 }
 
 void MainWindow::LineDescriptor::add_to_ui() {
-    ui->gridLayout->addWidget(line_number_label, 3,0);
-    ui->gridLayout->addWidget(line_status_checkbox, 3,1);
-    ui->gridLayout->addWidget(product_name_lineedit, 3,3);
-    ui->gridLayout->addWidget(plan_lineedit, 3,5);
-    ui->gridLayout->addWidget(current_label, 3,6);
-    ui->gridLayout->addWidget(line_start_pushbutton, 3,7);
-    ui->gridLayout->addWidget(line_status_finish_checkbox, 3,8);
+    static int line_position = 2;
+    line_position++;
+    ui->gridLayout->addWidget(line_number_label, line_position, 0);
+    ui->gridLayout->addWidget(line_status_checkbox, line_position, 1);
+    ui->gridLayout->addWidget(product_name_lineedit, line_position, 3);
+    ui->gridLayout->addWidget(plan_lineedit, line_position, 5);
+    ui->gridLayout->addWidget(current_label, line_position, 6);
+    ui->gridLayout->addWidget(line_start_pushbutton, line_position, 7);
+    ui->gridLayout->addWidget(line_status_finish_checkbox, line_position, 8);
 }
 
 std::map<std::string, std::string> MainWindow::get_vsds(const std::string & vsd_path) {
