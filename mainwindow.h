@@ -75,7 +75,7 @@ private slots:
     void on_add_line_pushbutton_clicked();
 
 private:
-
+    std::string save_folder;
 
     Ui::MainWindow *ui;
     QTcpServer * mTcpServer;

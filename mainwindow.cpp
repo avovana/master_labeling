@@ -32,6 +32,18 @@ MainWindow::MainWindow(QWidget *parent)
     // Прочитать vsd
     update_xml();
 
+    pugi::xml_document doc;
+    if (!doc.load_file("vars.xml")) {
+        cout << "Load vars XML positions.xml FAILED" << endl;
+        return;
+    } else {
+        cout << "Load vars XML positions.xml SUCCESS" << endl;
+    }
+
+    pugi::xml_node save_folder_child = doc.child("vars").child("save_folder");
+    save_folder = save_folder_child.text().get();
+    cout << "save_folder: " << save_folder << endl;
+
     mTcpServer = new QTcpServer(this);
 
     connect(mTcpServer, &QTcpServer::newConnection, this, &MainWindow::on_new_connection);
@@ -362,7 +374,7 @@ void MainWindow::on_server_read() {
 
             qDebug() << "date=" << date.c_str();
 
-            std::string filename = std::string("\\\\192.168.0.21\\shared_folder\\input") + date + "_ki_line_number_" + to_string(line_number) + ".txt";
+            std::string filename = save_folder + date + "_ki_line_number_" + to_string(line_number) + ".txt";
 
             std::ofstream out(filename);
             out << scan.toStdString();
@@ -392,7 +404,7 @@ MainWindow::~MainWindow() {
 
 void MainWindow::on_make_template_pushbutton_clicked() {
     //------------------------File choose-----------------------------
-    QString ki_name = QFileDialog::getOpenFileName(this, "Ki", "\\\\192.168.0.21\\shared_folder\\input");
+    QString ki_name = QFileDialog::getOpenFileName(this, "Ki", save_folder);
     qDebug() << "Filename ki: " << ki_name;
     qDebug() << "product_name: " << ui->product_name_combobox->currentText();
     string product_name = ui->product_name_combobox->currentText().toStdString();
