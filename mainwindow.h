@@ -65,9 +65,6 @@ public slots:
     void on_new_connection();
     void on_server_read();
     void on_client_disconnected();
-
-    void on_line_1_start_pushbutton_clicked();
-
     void send_ready_to_slave();
 private slots:
     void on_make_template_pushbutton_clicked();

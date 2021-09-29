@@ -157,14 +157,28 @@ void MainWindow::on_server_read() {
     auto descriptor_itr = std::find_if(begin(lines_descriptors), end(lines_descriptors),
                                     [&line_number](auto descriptor) { return line_number == descriptor.line_number; });
 
-    if(descriptor_itr == end(lines_descriptors)) {
-        qDebug() << "Line doesn't exist! ERROR" << msg_type;
-        return;
-    }
+    bool not_exist_description = (descriptor_itr == end(lines_descriptors));
 
     switch(msg_type) {
         case 1: // Info request
         {
+            if(not_exist_description) {
+                qDebug() << "Line doesn't exist! ERROR" << msg_type;
+
+                QByteArray out_array;
+                QDataStream stream(&out_array, QIODevice::WriteOnly);
+                unsigned int type = 8;
+                unsigned int out_msg_size = sizeof(type);
+                stream << out_msg_size;
+                stream << type;
+
+                qDebug() << "out_array_size=" << out_array.size();
+
+                socket->write(out_array);
+
+                return;
+            }
+
             descriptor_itr->socket = socket;
 
             descriptor_itr->line_status_checkbox->setChecked(true);
@@ -292,6 +306,11 @@ void MainWindow::on_server_read() {
 
         case 2: // Scan receive
         {
+            if(not_exist_description) {
+                qDebug() << "Scan receive Line doesn't exist! ERROR" << msg_type;
+                return;
+            }
+            /*
             QByteArray buffer(data_size, Qt::Uninitialized);
 
             received_bytes.readRawData(buffer.data(), data_size);
@@ -305,10 +324,21 @@ void MainWindow::on_server_read() {
             out.close();
 
             descriptor_itr->current_label->setText(QString::number(++current));
+            */
+            QByteArray buffer(data_size, Qt::Uninitialized);
+
+            received_bytes.readRawData(buffer.data(), data_size);
+            QString scan_number(buffer);
+            descriptor_itr->current_label->setText(scan_number);
         }
         break;
         case 3:
         {
+            if(not_exist_description) {
+                qDebug() << "File receive Line doesn't exist! ERROR" << msg_type;
+                return;
+            }
+
             QByteArray buffer(data_size, Qt::Uninitialized);
 
             received_bytes.readRawData(buffer.data(), data_size);
@@ -492,12 +522,9 @@ void MainWindow::on_make_template_pushbutton_clicked() {
     }
 }
 
-void MainWindow::on_line_1_start_pushbutton_clicked() {
-
-}
-
 void MainWindow::send_ready_to_slave() {
     QPushButton * senderButton = qobject_cast<QPushButton *>(this->sender());
+    senderButton->setStyleSheet("background-color: green");
 
     QByteArray out_array;
     QDataStream stream(&out_array, QIODevice::WriteOnly);
@@ -506,7 +533,7 @@ void MainWindow::send_ready_to_slave() {
     stream << out_msg_size;
     stream << type;
 
-    qDebug() << " on_line_1_start_pushbutton_clicked out_array.size(): " << out_array.size();
+    qDebug() << " on pushbutton_clicked size: " << out_array.size();
 
     auto descriptor_itr = std::find_if(begin(lines_descriptors), end(lines_descriptors),
                                     [senderButton](auto descriptor) { return senderButton == descriptor.line_start_pushbutton; });
