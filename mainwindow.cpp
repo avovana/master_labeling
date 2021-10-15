@@ -404,7 +404,7 @@ MainWindow::~MainWindow() {
 
 void MainWindow::on_make_template_pushbutton_clicked() {
     //------------------------File choose-----------------------------
-    QString ki_name = QFileDialog::getOpenFileName(this, "Ki", save_folder);
+    QString ki_name = QFileDialog::getOpenFileName(this, "Ki", QString::fromStdString(save_folder));
     qDebug() << "Filename ki: " << ki_name;
     qDebug() << "product_name: " << ui->product_name_combobox->currentText();
     string product_name = ui->product_name_combobox->currentText().toStdString();
