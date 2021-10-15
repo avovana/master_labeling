@@ -29,20 +29,20 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow) {
     ui->setupUi(this);
 
-    // Прочитать vsd
-    update_xml();
-
     pugi::xml_document doc;
     if (!doc.load_file("vars.xml")) {
-        cout << "Load vars XML positions.xml FAILED" << endl;
+        cout << "Load vars XML FAILED" << endl;
         return;
     } else {
-        cout << "Load vars XML positions.xml SUCCESS" << endl;
+        cout << "Load vars XML SUCCESS" << endl;
     }
 
     pugi::xml_node save_folder_child = doc.child("vars").child("save_folder");
     save_folder = save_folder_child.text().get();
     cout << "save_folder: " << save_folder << endl;
+
+    // Прочитать vsd
+    update_xml();
 
     mTcpServer = new QTcpServer(this);
 
@@ -620,6 +620,8 @@ void MainWindow::LineDescriptor::add_to_ui() {
 std::map<std::string, std::string> MainWindow::get_vsds(const std::string & vsd_path) {
     std::ifstream vsd;
 
+    std::cout<<"vsd_path: " << vsd_path <<std::endl;
+
     vsd.open(vsd_path);
     if(not vsd.is_open()) {
         std::cout<<"Open vsd.csv ERROR"<<std::endl;
@@ -644,7 +646,7 @@ std::map<std::string, std::string> MainWindow::get_vsds(const std::string & vsd_
 }
 
 void MainWindow::update_xml() {
-    const string vsd_path = string(save_folder + "vsd.csv");
+    const string vsd_path = string(save_folder + "\\vsd.csv");
 
     const auto& vsd_per_names = get_vsds(vsd_path);
     if(vsd_per_names.empty()) {
