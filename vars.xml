@@ -1,4 +1,4 @@
 <?xml version="1.0"?>
 <vars>
-	<save_folder>"\\\\192.168.0.21\\shared_folder\\input"</save_folder>
+	<save_folder>\\192.168.0.21\shared_folder\</save_folder>
 </vars>
