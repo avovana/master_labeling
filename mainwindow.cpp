@@ -374,7 +374,7 @@ void MainWindow::on_server_read() {
 
             qDebug() << "date=" << date.c_str();
 
-            std::string filename = save_folder + date + "_ki_line_number_" + to_string(line_number) + ".txt";
+            std::string filename = save_folder + "input\\" + date + "_ki_line_number_" + to_string(line_number) + ".txt";
 
             std::ofstream out(filename);
             out << scan.toStdString();
@@ -644,7 +644,7 @@ std::map<std::string, std::string> MainWindow::get_vsds(const std::string & vsd_
 }
 
 void MainWindow::update_xml() {
-    const string vsd_path = string("vsd.csv");
+    const string vsd_path = string(save_folder + "vsd.csv");
 
     const auto& vsd_per_names = get_vsds(vsd_path);
     if(vsd_per_names.empty()) {
