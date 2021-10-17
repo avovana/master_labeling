@@ -3,12 +3,14 @@
 
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 #include <regex>
 
 #include <QBitArray>
 #include <QFileDialog>
 
 using namespace std;
+namespace fs = std::filesystem;
 
 ostream& operator<<( ostream&  out, Position& pos ) {
     out << "code_tn_ved: " << pos.code_tn_ved << " " << endl
@@ -354,37 +356,48 @@ void MainWindow::on_server_read() {
             QByteArray buffer(data_size, Qt::Uninitialized);
 
             received_bytes.readRawData(buffer.data(), data_size);
-            QString scan(buffer);
+            QString scans(buffer);
 
             qDebug() << "file save...";
-            qDebug() << scan;
-            auto pos = scan.lastIndexOf(QChar('\n'));
+            qDebug() << scans;
+            auto pos = scans.lastIndexOf(QChar('\n'));
             if(pos != -1)
-                scan.truncate(pos);
+                scans.truncate(pos);
 
             time_t rawtime;
             struct tm * timeinfo;
-            char bufferDate[80];
+            char date_buffer[80];
+            char time_buffer [80];
 
             time (&rawtime);
             timeinfo = localtime(&rawtime);
 
-            strftime(bufferDate, sizeof(bufferDate), "%d-%m-%Y", timeinfo);
-            std::string date(bufferDate);
+            strftime(date_buffer, sizeof(date_buffer), "%d-%m", timeinfo);
+            strftime(time_buffer, sizeof(time_buffer), "%H:%M", timeinfo);
 
+            std::string date(date_buffer);
+            std::string time_ts(time_buffer);
             qDebug() << "date=" << date.c_str();
+            qDebug() << "time_ts=" << time_ts.c_str();
 
-            std::string filename = save_folder + "input\\" + date + "_ki_line_number_" + to_string(line_number) + ".txt";
+            string working_dir = save_folder + "/ki/" + std::string(date_buffer);
+            fs::create_directories(working_dir);
+            std::filesystem::current_path(working_dir);
+
+            std::string filename = descriptor_itr->product_name_lineedit->text().toStdString() + "_" + to_string(scans.count(QChar('\n')) + 1) + "_line_number_" + to_string(line_number) + "_" + time_ts + ".txt";
 
             std::ofstream out(filename);
-            out << scan.toStdString();
+            out << scans.toStdString();
             out.close();
 
             auto palette = QPalette();
             palette.setColor(QPalette().Base, QColor("#23F617"));
             descriptor_itr->line_status_finish_checkbox->setPalette(palette);
+            descriptor_itr->line_status_finish_checkbox->setChecked(true);
 
             qDebug() << "file save done";
+            descriptor_itr->line_start_pushbutton->setStyleSheet("background-color: red");
+            descriptor_itr->line_start_pushbutton->setText("Файл получен");
         }
         break;
     }
@@ -411,6 +424,12 @@ void MainWindow::on_make_template_pushbutton_clicked() {
 
     //------------------------Download config-----------------------------
     Position position;
+
+    cout << "fs::current_path(): " << fs::current_path() << endl;
+    for (const auto & entry : fs::directory_iterator(fs::current_path()))
+        std::cout << entry.path() << std::endl;
+
+    fs::current_path(save_folder);
 
     pugi::xml_document doc;
     if (!doc.load_file("positions.xml")) {
@@ -451,12 +470,15 @@ void MainWindow::on_make_template_pushbutton_clicked() {
     }
     //------------------------Make file-----------------------------
 
-    std::string date_pattern = std::string("%Y-%m-%d");
+    std::string date_pattern = std::string("%d-%m");
+    std::string time_pattern = std::string("%H:%M");
     char date_buffer [80];
+    char time_buffer [80];
 
     time_t t = time(0);
     struct tm * now = localtime( & t );
     strftime (date_buffer,80,date_pattern.c_str(),now);
+    strftime (time_buffer,80,time_pattern.c_str(),now);
 
     // Подсчитать кол-во сканов
     string s;
@@ -474,8 +496,11 @@ void MainWindow::on_make_template_pushbutton_clicked() {
     in.close();
     // Создать файл
 
-    string filename = std::string(date_buffer) + " " + product_name + " " + to_string(sTotal)+ ".csv";
+    string filename = product_name + to_string(sTotal)+ " " + std::string(time_buffer) + ".csv";
 
+    string working_dir = save_folder + "/input/" + std::string(date_buffer);
+    fs::create_directories(working_dir);
+    std::filesystem::current_path(working_dir);
     std::ofstream template_file;
 
     template_file.open(filename, std::ios_base::app);
@@ -646,7 +671,7 @@ std::map<std::string, std::string> MainWindow::get_vsds(const std::string & vsd_
 }
 
 void MainWindow::update_xml() {
-    const string vsd_path = string(save_folder + "\\vsd.csv");
+    const string vsd_path = string(save_folder + "vsd.csv");
 
     const auto& vsd_per_names = get_vsds(vsd_path);
     if(vsd_per_names.empty()) {
