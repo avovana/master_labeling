@@ -3,14 +3,23 @@
 
 #include <iostream>
 #include <fstream>
-#include <filesystem>
+
 #include <regex>
 
 #include <QBitArray>
 #include <QFileDialog>
 
 using namespace std;
+
+#include "config.h"
+
+#ifdef COMPILER_IS_GNU
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+#else
+#include <filesystem>
 namespace fs = std::filesystem;
+#endif
 
 ostream& operator<<( ostream&  out, Position& pos ) {
     out << "code_tn_ved: " << pos.code_tn_ved << " " << endl
@@ -195,15 +204,11 @@ void MainWindow::on_server_read() {
 
             descriptor_itr->socket = socket;
 
-            descriptor_itr->line_status_checkbox->setChecked(true);
-            descriptor_itr->line_status_checkbox->setEnabled(false);
-
-            auto palette = QPalette();
-            palette.setColor(QPalette().Base, QColor("#23F617"));
-            descriptor_itr->line_status_checkbox->setPalette(palette);
+            descriptor_itr->line_status_label->setStyleSheet("QLabel{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: green;}");
+            //descriptor_itr->line_status_label->setEnabled(false);
 
             uint plan = descriptor_itr->plan_lineedit->text().toInt();
-            QString name = descriptor_itr->product_name_lineedit->text();
+            QString name = descriptor_itr->product_name_combobox->currentText();
             auto msg = QString("%1,%2").arg(name).arg(plan).toStdString();
             qDebug() << "msg_size=" << msg.size();
 
@@ -373,30 +378,30 @@ void MainWindow::on_server_read() {
             timeinfo = localtime(&rawtime);
 
             strftime(date_buffer, sizeof(date_buffer), "%d-%m", timeinfo);
-            strftime(time_buffer, sizeof(time_buffer), "%H:%M", timeinfo);
+            strftime(time_buffer, sizeof(time_buffer), "%H-%M", timeinfo);
 
             std::string date(date_buffer);
             std::string time_ts(time_buffer);
             qDebug() << "date=" << date.c_str();
             qDebug() << "time_ts=" << time_ts.c_str();
 
-            string working_dir = save_folder + "/ki/" + std::string(date_buffer);
+            string working_dir = save_folder + "ki\\" + std::string(date_buffer);
+            qDebug() << "working_dir=" << working_dir.c_str();
             fs::create_directories(working_dir);
-            std::filesystem::current_path(working_dir);
+            fs::current_path(working_dir);
+            string scans_number = to_string(scans.count(QChar('\n')) + 1);
+            qDebug() << "scans_number=" << scans_number.c_str();
+            qDebug() << "fs::current_path=" << fs::current_path().c_str();
 
-            std::string filename = descriptor_itr->product_name_lineedit->text().toStdString() + "_" + to_string(scans.count(QChar('\n')) + 1) + "_line_number_" + to_string(line_number) + "_" + time_ts + ".txt";
+            std::string filename = descriptor_itr->product_name_combobox->currentText().toStdString() + "_" + scans_number + "_" + time_ts + ".txt";
+            qDebug() << "filename=" << filename.c_str();
 
             std::ofstream out(filename);
             out << scans.toStdString();
             out.close();
 
-            auto palette = QPalette();
-            palette.setColor(QPalette().Base, QColor("#23F617"));
-            descriptor_itr->line_status_finish_checkbox->setPalette(palette);
-            descriptor_itr->line_status_finish_checkbox->setChecked(true);
-
             qDebug() << "file save done";
-            descriptor_itr->line_start_pushbutton->setStyleSheet("background-color: red");
+            descriptor_itr->line_start_pushbutton->setStyleSheet("QPushButton{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: red;}");
             descriptor_itr->line_start_pushbutton->setText("Файл получен");
         }
         break;
@@ -421,6 +426,9 @@ void MainWindow::on_make_template_pushbutton_clicked() {
     qDebug() << "Filename ki: " << ki_name;
     qDebug() << "product_name: " << ui->product_name_combobox->currentText();
     string product_name = ui->product_name_combobox->currentText().toStdString();
+
+    if(ki_name.isEmpty())
+        return;
 
     //------------------------Download config-----------------------------
     Position position;
@@ -470,8 +478,8 @@ void MainWindow::on_make_template_pushbutton_clicked() {
     }
     //------------------------Make file-----------------------------
 
-    std::string date_pattern = std::string("%d-%m");
-    std::string time_pattern = std::string("%H:%M");
+    std::string date_pattern = std::string("%Y-%m-%d");
+    std::string time_pattern = std::string("%H-%M");
     char date_buffer [80];
     char time_buffer [80];
 
@@ -496,11 +504,11 @@ void MainWindow::on_make_template_pushbutton_clicked() {
     in.close();
     // Создать файл
 
-    string filename = product_name + to_string(sTotal)+ " " + std::string(time_buffer) + ".csv";
+    string filename = product_name + "_" + to_string(sTotal) + "_" + std::string(time_buffer) + ".csv";
 
     string working_dir = save_folder + "/input/" + std::string(date_buffer);
     fs::create_directories(working_dir);
-    std::filesystem::current_path(working_dir);
+    fs::current_path(working_dir);
     std::ofstream template_file;
 
     template_file.open(filename, std::ios_base::app);
@@ -561,7 +569,7 @@ void MainWindow::on_make_template_pushbutton_clicked() {
 
 void MainWindow::send_ready_to_slave() {
     QPushButton * senderButton = qobject_cast<QPushButton *>(this->sender());
-    senderButton->setStyleSheet("background-color: green");
+    senderButton->setStyleSheet("QPushButton{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: green;}");
 
     QByteArray out_array;
     QDataStream stream(&out_array, QIODevice::WriteOnly);
@@ -593,25 +601,32 @@ void MainWindow::send_ready_to_slave() {
 void MainWindow::on_add_line_pushbutton_clicked() {
     lines++;
 
-    lines_descriptors.emplace_back(ui, lines);
+    lines_descriptors.emplace_back(ui, lines,vsds);
     connect(lines_descriptors.back().line_start_pushbutton, &QPushButton::clicked, this, &MainWindow::send_ready_to_slave);
 }
 
-MainWindow::LineDescriptor::LineDescriptor(Ui::MainWindow *ui_, uint line_number_) : ui(ui_), line_number(line_number_) {
+MainWindow::LineDescriptor::LineDescriptor(Ui::MainWindow *ui_, uint line_number_, vector<string> vsds_) : ui(ui_), line_number(line_number_) {
     line_number_label = new QLabel();
     line_number_label->setStyleSheet("QLabel{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
     line_number_label->setText(QString::number(line_number_));
     line_number_label->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
     line_number_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    line_status_checkbox = new QCheckBox();
-    line_status_checkbox->setStyleSheet("QCheckBox{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);}");
-    line_status_checkbox->setEnabled(false);
-    line_status_checkbox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    line_status_checkbox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    product_name_lineedit = new QLineEdit();
-    product_name_lineedit->setText("maslo");
-    product_name_lineedit->setStyleSheet("QLineEdit{font-size: 24px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
-    product_name_lineedit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    line_status_label = new QLabel();
+    line_status_label->setStyleSheet("QLabel{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
+    //line_status_label->setText(QString::number(4));
+    //line_status_label->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+    line_status_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    //line_status_checkbox->setStyleSheet("QCheckBox::indicator { width:150px; height: 150px;}");
+
+    product_name_combobox = new QComboBox();
+    product_name_combobox->setStyleSheet("QLineEdit{font-size: 24px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
+    product_name_combobox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    product_name_combobox->setStyleSheet("QComboBox{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
+    for(auto vsd_name : vsds_)
+        product_name_combobox->addItem(QString::fromStdString(vsd_name));
+
     plan_lineedit = new QLineEdit();
     plan_lineedit->setStyleSheet("QLineEdit{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
     plan_lineedit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -620,11 +635,8 @@ MainWindow::LineDescriptor::LineDescriptor(Ui::MainWindow *ui_, uint line_number
     current_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     line_start_pushbutton = new QPushButton();
     line_start_pushbutton->setText("Старт");
-    line_start_pushbutton->setStyleSheet("QPushButton{font-size: 14px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
+    line_start_pushbutton->setStyleSheet("QPushButton{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
     line_start_pushbutton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    line_status_finish_checkbox = new QCheckBox();
-    line_status_finish_checkbox->setEnabled(false);
-    line_status_finish_checkbox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     socket = nullptr;
 
     add_to_ui();
@@ -634,12 +646,11 @@ void MainWindow::LineDescriptor::add_to_ui() {
     static int line_position = 2;
     line_position++;
     ui->gridLayout->addWidget(line_number_label, line_position, 0);
-    ui->gridLayout->addWidget(line_status_checkbox, line_position, 1);
-    ui->gridLayout->addWidget(product_name_lineedit, line_position, 3);
+    ui->gridLayout->addWidget(line_status_label, line_position, 1);
+    ui->gridLayout->addWidget(product_name_combobox, line_position, 3);
     ui->gridLayout->addWidget(plan_lineedit, line_position, 5);
     ui->gridLayout->addWidget(current_label, line_position, 6);
     ui->gridLayout->addWidget(line_start_pushbutton, line_position, 7);
-    ui->gridLayout->addWidget(line_status_finish_checkbox, line_position, 8);
 }
 
 std::map<std::string, std::string> MainWindow::get_vsds(const std::string & vsd_path) {
@@ -682,7 +693,7 @@ void MainWindow::update_xml() {
 
     // XML open
     pugi::xml_document doc;
-    if (doc.load_file("positions.xml")) {
+    if (doc.load_file((save_folder + "positions.xml").c_str())) {
         cout << "Load XML success" << endl;
     } else {
         cout << "Load XML ERROR" << endl;
@@ -694,6 +705,7 @@ void MainWindow::update_xml() {
 
     for (auto const& [name, vsd] : vsd_per_names) {
         std::cout << "  vsd name: " << name << std::endl;
+        vsds.push_back(name);
         for (pugi::xml_node position_xml: positions_xml.children("position")) {
             std::string name_in_xml = position_xml.attribute("name_english").as_string();
             std::cout << "   name_in_xml: " << name_in_xml << std::endl;

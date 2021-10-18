@@ -18,6 +18,7 @@ add_executable(${PROJECT_NAME}
     main.cpp
     mainwindow.cpp
     mainwindow.h
+    config.h
     #mytcpserver.h
     #mytcpserver.cpp
     mainwindow.ui
@@ -28,8 +29,12 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt5::Widgets
     Qt5::Core
     Qt5::Network
+    stdc++fs
 )
+
+configure_file(config.h.in config.h @ONLY)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     include
+    ${PROJECT_BINARY_DIR}
 )

@@ -42,18 +42,17 @@ class MainWindow : public QMainWindow {
 
 struct LineDescriptor {
     //Q_OBJECT
-    LineDescriptor(Ui::MainWindow *ui_, uint line_number_);
+    LineDescriptor(Ui::MainWindow *ui_, uint line_number_, vector<string> vsds_);
     void add_to_ui();
 
     Ui::MainWindow *ui;
     uint8_t line_number;
     QLabel *line_number_label;
-    QCheckBox *line_status_checkbox;
-    QLineEdit *product_name_lineedit;
+    QLabel *line_status_label;
+    QComboBox *product_name_combobox;
     QLineEdit *plan_lineedit;
     QLineEdit *current_label;
     QPushButton *line_start_pushbutton;
-    QCheckBox *line_status_finish_checkbox;
     QTcpSocket *socket;
 };
 
@@ -83,6 +82,7 @@ private:
 
     //LineDescriptor *line_descriptor;
     std::vector<LineDescriptor> lines_descriptors;
+    std::vector<std::string> vsds;
     std::vector<QTcpSocket *> sockets;
 
     int current = 0;
