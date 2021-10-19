@@ -599,9 +599,9 @@ void MainWindow::send_ready_to_slave() {
 }
 
 void MainWindow::on_add_line_pushbutton_clicked() {
-    lines++;
+    auto line_number = ui->line_number_choose_combobox->currentText().toInt();
 
-    lines_descriptors.emplace_back(ui, lines,vsds);
+    lines_descriptors.emplace_back(ui, line_number, vsds);
     connect(lines_descriptors.back().line_start_pushbutton, &QPushButton::clicked, this, &MainWindow::send_ready_to_slave);
 }
 
