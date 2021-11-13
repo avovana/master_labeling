@@ -146,13 +146,11 @@ void MainWindow::on_server_read() {
     array_header = socket->read(4);
     qDebug() << "array_header=" << array_header;
 
-    uint32_t header;
+    uint32_t bytes_to_read;
     QDataStream ds_header(array_header);
-    ds_header >> header;
+    ds_header >> bytes_to_read;
 
-    qDebug() << "header=" << header;
-    uint32_t bytes_to_read = header;
-    uint32_t data_size = header - 2;
+    qDebug() << "bytes_to_read = " << bytes_to_read;
 
     while(bytes_to_read > 0) {
         if (!socket->waitForReadyRead(100))
@@ -171,66 +169,42 @@ void MainWindow::on_server_read() {
 
     uint8_t msg_type;
     uint8_t line_number;
+    uint8_t task_number;
 
     received_bytes >> msg_type;
     received_bytes >> line_number;
+    received_bytes >> task_number;
 
-    qDebug() << "msg_type=" << msg_type << " line_number=" << line_number << " INFO";
+    uint32_t body_size = array.size() - 3;
 
-    auto descriptor_itr = std::find_if(begin(lines_descriptors), end(lines_descriptors),
-                                    [&line_number](auto descriptor) { return line_number == descriptor.line_number; });
+    qDebug() << "msg_type = " << msg_type << " line_number = " << line_number << " INFO";
 
-    bool not_exist_description = (descriptor_itr == end(lines_descriptors));
+    auto connector_itr = std::find_if(begin(connectors), end(connectors),
+                                    [&line_number](auto connector) { return line_number == connector.line_number;});
+
+    if(connector_itr == end(connectors))
+        connectors.emplace_back(socket, line_number);
+    else if(connector_itr->socket != socket)
+        connector_itr->socket == socket;
 
     switch(msg_type) {
         case 1: // Info request
         {
-            if(not_exist_description) {
-                qDebug() << "Line doesn't exist! ERROR" << msg_type;
+            auto tasks = get_tasks_for_line(line_number);
 
-                QByteArray out_array;
-                QDataStream stream(&out_array, QIODevice::WriteOnly);
-                unsigned int type = 8;
-                unsigned int out_msg_size = sizeof(type);
-                stream << out_msg_size;
-                stream << type;
-
-                qDebug() << "out_array_size=" << out_array.size();
-
-                socket->write(out_array);
-
-                return;
+            vector<string> tasks_info;
+            for(auto& task : tasks) {
+                auto number = task.number();
+                auto name = task.product_name();
+                auto plan = task.plan();
+                auto info = QString("%1,%2,%3;").arg(number).arg(name).arg(plan).toStdString();
+                tasks_info.push_back(info);
             }
 
-            descriptor_itr->socket = socket;
+            connector_itr->send_tasks(tasks_info);
 
-            descriptor_itr->line_status_label->setStyleSheet("QLabel{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: green;}");
-            //descriptor_itr->line_status_label->setEnabled(false);
-
-            uint plan = descriptor_itr->plan_lineedit->text().toInt();
-            QString name = descriptor_itr->product_name_combobox->currentText();
-            auto msg = QString("%1,%2").arg(name).arg(plan).toStdString();
-            qDebug() << "msg_size=" << msg.size();
-
-            QByteArray out_array;
-            QDataStream stream(&out_array, QIODevice::WriteOnly);
-            unsigned int out_msg_size = msg.size() + sizeof(unsigned int);
-            unsigned int type = 4;
-            stream << out_msg_size;
-            stream << type;
-            stream.writeRawData(msg.c_str(), msg.size());
-
-            for(int i = 0; i < out_array.count(); ++i) {
-              qDebug() << QString::number(out_array[i], 16);
-            }
-
-            qDebug() << "out_array=" << out_array;
-            for(int i = 0; i < out_array.count(); ++i) {
-              qDebug() << out_array[i];
-            }
-            qDebug() << "out_array_size=" << out_array.size();
-
-            descriptor_itr->socket->write(out_array);
+            for(auto& task : tasks)
+                task.set_status(TaskStatus::STARTED);
         /*
         switch(line_number) {
             case 1:
@@ -325,42 +299,31 @@ void MainWindow::on_server_read() {
 
         case 2: // Scan receive
         {
-            if(not_exist_description) {
-                qDebug() << "Scan receive Line doesn't exist! ERROR" << msg_type;
+            QByteArray buffer(body_size, Qt::Uninitialized);
+
+            received_bytes.readRawData(buffer.data(), body_size);
+            QString scan_number(buffer);
+
+            auto tasks = get_tasks_for_line(line_number);
+            if(tasks.empty()) {
+                qDebug() << "Tasks doesn't exist! ERROR" << msg_type;
                 return;
             }
-            /*
-            QByteArray buffer(data_size, Qt::Uninitialized);
 
-            received_bytes.readRawData(buffer.data(), data_size);
-            QString scan(buffer);
+            auto task_it = find_if(tasks.begin(), tasks.end(), [task_number](auto task_info){ return task_info.task_number == task_number;});
+            if(task_it == tasks.end()) {
+                qDebug() << "Task doesn't exist! ERROR" << msg_type;
+                return;
+            }
 
-            qDebug() << "    scan_size=" << scan.size() << " scan=" << scan;
-            std::cout << "std scan_scan_size=" << scan.toStdString().size() << " scan=" << scan.toStdString();
-
-            std::ofstream out("scans_current_" + descriptor_itr->product_name_lineedit->text().toStdString() + ".txt", std::ios_base::app);
-            out << scan.toStdString() << endl;
-            out.close();
-
-            descriptor_itr->current_label->setText(QString::number(++current));
-            */
-            QByteArray buffer(data_size, Qt::Uninitialized);
-
-            received_bytes.readRawData(buffer.data(), data_size);
-            QString scan_number(buffer);
-            descriptor_itr->current_label->setText(scan_number);
+            task_it->set_current(scan_number);
         }
         break;
-        case 3:
+        case 3: // End receive
         {
-            if(not_exist_description) {
-                qDebug() << "File receive Line doesn't exist! ERROR" << msg_type;
-                return;
-            }
+            QByteArray buffer(body_size, Qt::Uninitialized);
 
-            QByteArray buffer(data_size, Qt::Uninitialized);
-
-            received_bytes.readRawData(buffer.data(), data_size);
+            received_bytes.readRawData(buffer.data(), body_size);
             QString scans(buffer);
 
             qDebug() << "file save...";
@@ -393,7 +356,19 @@ void MainWindow::on_server_read() {
             qDebug() << "scans_number=" << scans_number.c_str();
             qDebug() << "fs::current_path=" << fs::current_path().c_str();
 
-            std::string filename = descriptor_itr->product_name_combobox->currentText().toStdString() + "_" + scans_number + "_" + time_ts + ".txt";
+            auto tasks = get_tasks_for_line(line_number);
+            if(tasks.empty()) {
+                qDebug() << "Tasks doesn't exist! ERROR" << msg_type;
+                return;
+            }
+
+            auto task_it = find_if(tasks.begin(), tasks.end(), [task_number](auto task_info){ return task_info.task_number == task_number;});
+            if(task_it == tasks.end()) {
+                qDebug() << "Task doesn't exist! ERROR" << msg_type;
+                return;
+            }
+
+            std::string filename = task_it->product_name().toStdString() + "_" + scans_number + "_" + time_ts + ".txt";
             qDebug() << "filename=" << filename.c_str();
 
             std::ofstream out(filename);
@@ -401,8 +376,17 @@ void MainWindow::on_server_read() {
             out.close();
 
             qDebug() << "file save done";
-            descriptor_itr->line_start_pushbutton->setStyleSheet("QPushButton{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: red;}");
-            descriptor_itr->line_start_pushbutton->setText("Файл получен");
+
+            task_it->set_status(TaskStatus::FINISHED);
+
+
+//            auto it = descriptor_itr->tasks.find(task_number);
+//            if (it != descriptor_itr->tasks.end()) {
+//                delete it->second;
+//                it->tasks.erase(it);
+//            }
+
+//            qDebug() << "task finished";
         }
         break;
     }
@@ -598,59 +582,21 @@ void MainWindow::send_ready_to_slave() {
     descriptor_itr->socket->write(out_array);
 }
 
+// add task description
 void MainWindow::on_add_line_pushbutton_clicked() {
     auto line_number = ui->line_number_choose_combobox->currentText().toInt();
 
-    lines_descriptors.emplace_back(ui, line_number, vsds);
-    connect(lines_descriptors.back().line_start_pushbutton, &QPushButton::clicked, this, &MainWindow::send_ready_to_slave);
-}
+    auto it = std::find_if(begin(lines_descriptors), end(lines_descriptors),
+                                    [&line_number](auto descriptor) { return line_number == descriptor.line_number;});
 
-MainWindow::LineDescriptor::LineDescriptor(Ui::MainWindow *ui_, uint line_number_, vector<string> vsds_) : ui(ui_), line_number(line_number_) {
-    line_number_label = new QLabel();
-    line_number_label->setStyleSheet("QLabel{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
-    line_number_label->setText(QString::number(line_number_));
-    line_number_label->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-    line_number_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    if (it == lines_descriptors.end()) {
+        auto& inserted_descriptor = lines_descriptors.emplace_back(ui, line_number, vsds_names);
 
-    line_status_label = new QLabel();
-    line_status_label->setStyleSheet("QLabel{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
-    //line_status_label->setText(QString::number(4));
-    //line_status_label->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-    line_status_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        connect(inserted_descriptor.get_last_task().line_start_pushbutton, &QPushButton::clicked, this, &MainWindow::send_ready_to_slave);
+    }
 
-    //line_status_checkbox->setStyleSheet("QCheckBox::indicator { width:150px; height: 150px;}");
-
-    product_name_combobox = new QComboBox();
-    product_name_combobox->setStyleSheet("QLineEdit{font-size: 24px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
-    product_name_combobox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    product_name_combobox->setStyleSheet("QComboBox{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
-    for(auto vsd_name : vsds_)
-        product_name_combobox->addItem(QString::fromStdString(vsd_name));
-
-    plan_lineedit = new QLineEdit();
-    plan_lineedit->setStyleSheet("QLineEdit{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
-    plan_lineedit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    current_label = new QLineEdit();
-    current_label->setStyleSheet("QLineEdit{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
-    current_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    line_start_pushbutton = new QPushButton();
-    line_start_pushbutton->setText("Старт");
-    line_start_pushbutton->setStyleSheet("QPushButton{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
-    line_start_pushbutton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    socket = nullptr;
-
-    add_to_ui();
-}
-
-void MainWindow::LineDescriptor::add_to_ui() {
-    static int line_position = 2;
-    line_position++;
-    ui->gridLayout->addWidget(line_number_label, line_position, 0);
-    ui->gridLayout->addWidget(line_status_label, line_position, 1);
-    ui->gridLayout->addWidget(product_name_combobox, line_position, 3);
-    ui->gridLayout->addWidget(plan_lineedit, line_position, 5);
-    ui->gridLayout->addWidget(current_label, line_position, 6);
-    ui->gridLayout->addWidget(line_start_pushbutton, line_position, 7);
+    it->add_task();
+    connect(it->get_last_task().line_start_pushbutton, &QPushButton::clicked, this, &MainWindow::send_ready_to_slave);
 }
 
 std::map<std::string, std::string> MainWindow::get_vsds(const std::string & vsd_path) {
@@ -705,7 +651,7 @@ void MainWindow::update_xml() {
 
     for (auto const& [name, vsd] : vsd_per_names) {
         std::cout << "  vsd name: " << name << std::endl;
-        vsds.push_back(name);
+        vsds_names.push_back(name);
         for (pugi::xml_node position_xml: positions_xml.children("position")) {
             std::string name_in_xml = position_xml.attribute("name_english").as_string();
             std::cout << "   name_in_xml: " << name_in_xml << std::endl;
