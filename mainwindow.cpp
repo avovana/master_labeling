@@ -179,32 +179,25 @@ void MainWindow::on_server_read() {
 
     qDebug() << "msg_type = " << msg_type << " line_number = " << line_number << " INFO";
 
-    auto connector_itr = std::find_if(begin(connectors), end(connectors),
-                                    [&line_number](auto connector) { return line_number == connector.line_number;});
-
-    if(connector_itr == end(connectors))
-        connectors.emplace_back(socket, line_number);
-    else if(connector_itr->socket != socket)
-        connector_itr->socket == socket;
+    auto& connector = create_connector_if_needed(line_number, socket);
 
     switch(msg_type) {
         case 1: // Info request
         {
-            auto tasks = get_tasks_for_line(line_number);
-
             vector<string> tasks_info;
-            for(auto& task : tasks) {
-                auto number = task.number();
-                auto name = task.product_name();
-                auto plan = task.plan();
-                auto info = QString("%1,%2,%3;").arg(number).arg(name).arg(plan).toStdString();
-                tasks_info.push_back(info);
+
+            for(auto& task: tasks) {
+                if(task.line_number == line_number) {
+                    auto number = task.number();
+                    auto name = task.product_name();
+                    auto plan = task.plan();
+                    auto info = QString("%1,%2,%3;").arg(number).arg(name).arg(plan).toStdString();
+                    task.set_status(TaskStatus::STARTED);
+                    tasks_info.push_back(info);
+                }
             }
 
-            connector_itr->send_tasks(tasks_info);
-
-            for(auto& task : tasks)
-                task.set_status(TaskStatus::STARTED);
+            connector.send_tasks(tasks_info);
         /*
         switch(line_number) {
             case 1:
@@ -304,19 +297,18 @@ void MainWindow::on_server_read() {
             received_bytes.readRawData(buffer.data(), body_size);
             QString scan_number(buffer);
 
-            auto tasks = get_tasks_for_line(line_number);
-            if(tasks.empty()) {
-                qDebug() << "Tasks doesn't exist! ERROR" << msg_type;
-                return;
-            }
+            bool found_task = false;
 
-            auto task_it = find_if(tasks.begin(), tasks.end(), [task_number](auto task_info){ return task_info.task_number == task_number;});
-            if(task_it == tasks.end()) {
+            for(auto& task: tasks) {
+                if(task.line_number == line_number && task.task_number == task_number) {
+                    task.set_current(scan_number);
+                    found_task = true;
+                }
+            }
+            if(not found_task) {
                 qDebug() << "Task doesn't exist! ERROR" << msg_type;
                 return;
             }
-
-            task_it->set_current(scan_number);
         }
         break;
         case 3: // End receive
@@ -356,19 +348,23 @@ void MainWindow::on_server_read() {
             qDebug() << "scans_number=" << scans_number.c_str();
             qDebug() << "fs::current_path=" << fs::current_path().c_str();
 
-            auto tasks = get_tasks_for_line(line_number);
-            if(tasks.empty()) {
-                qDebug() << "Tasks doesn't exist! ERROR" << msg_type;
-                return;
-            }
+            QString product_name;
+            bool found_task = false;
 
-            auto task_it = find_if(tasks.begin(), tasks.end(), [task_number](auto task_info){ return task_info.task_number == task_number;});
-            if(task_it == tasks.end()) {
+            for(auto& task: tasks) {
+                if(task.line_number == line_number && task.task_number == task_number) {
+                    product_name = task.product_name();
+                    task.set_status(TaskStatus::FINISHED);
+                    found_task = true;
+                    break;
+                }
+            }
+            if(not found_task) {
                 qDebug() << "Task doesn't exist! ERROR" << msg_type;
                 return;
             }
 
-            std::string filename = task_it->product_name().toStdString() + "_" + scans_number + "_" + time_ts + ".txt";
+            std::string filename = product_name.toStdString() + "_" + scans_number + "_" + time_ts + ".txt";
             qDebug() << "filename=" << filename.c_str();
 
             std::ofstream out(filename);
@@ -376,9 +372,6 @@ void MainWindow::on_server_read() {
             out.close();
 
             qDebug() << "file save done";
-
-            task_it->set_status(TaskStatus::FINISHED);
-
 
 //            auto it = descriptor_itr->tasks.find(task_number);
 //            if (it != descriptor_itr->tasks.end()) {
@@ -553,50 +546,35 @@ void MainWindow::on_make_template_pushbutton_clicked() {
 
 void MainWindow::send_ready_to_slave() {
     QPushButton * senderButton = qobject_cast<QPushButton *>(this->sender());
-    senderButton->setStyleSheet("QPushButton{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: green;}");
+    auto name = senderButton->objectName();
 
-    QByteArray out_array;
-    QDataStream stream(&out_array, QIODevice::WriteOnly);
-    unsigned int out_msg_size = sizeof(unsigned int);
-    unsigned int type = 6;
-    stream << out_msg_size;
-    stream << type;
+    uint8_t line_number = name.mid(0,name.indexOf(';')).toUInt();
 
-    qDebug() << " on pushbutton_clicked size: " << out_array.size();
+    auto connector_itr = std::find_if(begin(connectors), end(connectors),
+                                    [&line_number](auto connector) { return line_number == connector.line_number;});
 
-    auto descriptor_itr = std::find_if(begin(lines_descriptors), end(lines_descriptors),
-                                    [senderButton](auto descriptor) { return senderButton == descriptor.line_start_pushbutton; });
-
-    if(descriptor_itr == end(lines_descriptors)) {
-        qDebug() << "Line doesn't exist! ERROR";
-        return;
-    }
-
-    qDebug() << "send to line=" << descriptor_itr->line_number;
-
-    if(descriptor_itr->socket == nullptr) {
+    if(connector_itr == end(connectors)) {
         qDebug() << "Connection wasn't established ERROR";
         return;
     }
 
-    descriptor_itr->socket->write(out_array);
+    connector_itr->send_ready();
+
+    for(auto& task : tasks) {
+        if(task.line_number == line_number)
+            task.start_button()->setStyleSheet("QPushButton{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: green;}");
+    }
 }
 
-// add task description
 void MainWindow::on_add_line_pushbutton_clicked() {
     auto line_number = ui->line_number_choose_combobox->currentText().toInt();
 
-    auto it = std::find_if(begin(lines_descriptors), end(lines_descriptors),
-                                    [&line_number](auto descriptor) { return line_number == descriptor.line_number;});
+    auto& inserted_task = tasks.emplace_back(line_number, ++task_counter, vsds_names); // implicitly uint -> uint8_t for line_number
 
-    if (it == lines_descriptors.end()) {
-        auto& inserted_descriptor = lines_descriptors.emplace_back(ui, line_number, vsds_names);
+    //inserted_task_it->add_task();
+    connect(inserted_task.start_button(), &QPushButton::clicked, this, &MainWindow::send_ready_to_slave);
 
-        connect(inserted_descriptor.get_last_task().line_start_pushbutton, &QPushButton::clicked, this, &MainWindow::send_ready_to_slave);
-    }
-
-    it->add_task();
-    connect(it->get_last_task().line_start_pushbutton, &QPushButton::clicked, this, &MainWindow::send_ready_to_slave);
+    ui->lines_layout->addLayout(inserted_task.layout());
 }
 
 std::map<std::string, std::string> MainWindow::get_vsds(const std::string & vsd_path) {

@@ -39,9 +39,6 @@ using namespace std;
 
 std::ostream& operator<<(std::ostream&  out, Position& pos);
 
-class MainWindow : public QMainWindow {
-    Q_OBJECT
-
 enum class TaskStatus {
     INIT,
     STARTED,
@@ -49,8 +46,9 @@ enum class TaskStatus {
 };
 
 struct TaskInfo {
-    TaskInfo(Ui::MainWindow *ui_, uint line_number, vector<string> vsds_names):
-        ui(ui_)
+    TaskInfo(uint8_t line_number_, uint8_t task_number_, vector<string> vsds_names):
+        line_number(line_number_),
+        task_number(task_number_)
     {
         new_layout = new QHBoxLayout();
 
@@ -81,6 +79,7 @@ struct TaskInfo {
         line_start_pushbutton->setText("Старт");
         line_start_pushbutton->setStyleSheet("QPushButton{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
         line_start_pushbutton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        line_start_pushbutton->setObjectName(QString("%1;%2").arg(line_number).arg(task_number));
 
         //static int line_position = 2;
         //line_position++;
@@ -90,8 +89,24 @@ struct TaskInfo {
         new_layout->addWidget(plan_lineedit);
         new_layout->addWidget(current_label);
         new_layout->addWidget(line_start_pushbutton);
+    }
 
-        //ui->lines_layout->addLayout(new_layout);
+    ~TaskInfo() {
+        delete new_layout;
+        delete line_number_label;
+        delete line_status_label;
+        delete product_name_combobox;
+        delete plan_lineedit;
+        delete current_label;
+        delete line_start_pushbutton;
+    }
+
+    auto& layout() {
+        return new_layout;
+    }
+
+    auto& start_button() {
+        return line_start_pushbutton;
     }
 
     auto number() {
@@ -138,39 +153,8 @@ struct TaskInfo {
     QLineEdit *current_label;
     QPushButton *line_start_pushbutton;
     uint8_t task_number = 0;
+    uint8_t line_number = 0;
     TaskStatus status = TaskStatus::INIT;
-};
-
-struct LineDescriptor {
-    //Q_OBJECT
-    LineDescriptor(Ui::MainWindow *ui_, uint line_number_, vector<string> vsds_names_) :
-        ui(ui_),
-        line_number(line_number_),
-        vsds_names(vsds_names_)
-    {
-        add_task();
-    }
-
-    void add_task() {
-        ++task_number;
-        TaskInfo ti = TaskInfo(ui, line_number, vsds_names);
-        //tasks[task_number] = TaskInfo(ui, line_number, vsds_names);
-        //tasks.emplace(line_number, ti);
-        tasks.try_emplace(line_number, ui, line_number, vsds_names);
-    }
-
-    const TaskInfo& get_last_task() {
-        return tasks.rbegin()->second;
-    }
-
-    Ui::MainWindow *ui;
-    uint8_t line_number;
-    uint8_t task_number = 0;
-
-    std::vector<string> vsds_names;
-
-    QTcpSocket *socket;
-    std::map<uint8_t, TaskInfo> tasks;
 };
 
 struct LineConnector {
@@ -204,7 +188,7 @@ struct LineConnector {
             unsigned int type = 4;
             stream << out_msg_size;
             stream << type;
-            //stream.writeRawData(msg.c_str(), msg.size());
+            stream.writeRawData(msg.c_str(), msg.size());
 
             for(int i = 0; i < out_array.count(); ++i)
               qDebug() << out_array.count() << QString::number(out_array[i], 16);
@@ -219,9 +203,59 @@ struct LineConnector {
         }
     }
 
-    QTcpSocket* socket;
-    uint8_t line_number;
+    void send_ready() {
+        QByteArray out_array;
+        QDataStream stream(&out_array, QIODevice::WriteOnly);
+        unsigned int out_msg_size = sizeof(unsigned int);
+        unsigned int type = 6;
+        stream << out_msg_size;
+        stream << type;
+
+        qDebug() << " on pushbutton_clicked size: " << out_array.size();
+
+       socket->write(out_array);
+    }
+
+    QTcpSocket* socket = nullptr;
+    uint8_t line_number = 0;
 };
+
+class MainWindow : public QMainWindow {
+    Q_OBJECT
+
+/*
+struct LineDescriptor {
+    //Q_OBJECT
+    LineDescriptor(Ui::MainWindow *ui_, uint line_number_, vector<string> vsds_names_) :
+        ui(ui_),
+        line_number(line_number_),
+        vsds_names(vsds_names_)
+    {
+        add_task();
+    }
+
+    void add_task() {
+        ++task_number;
+        TaskInfo ti = TaskInfo(ui, line_number, vsds_names);
+        //tasks[task_number] = TaskInfo(ui, line_number, vsds_names);
+        //tasks.emplace(line_number, ti);
+        tasks.try_emplace(line_number, ui, line_number, vsds_names);
+    }
+
+    const TaskInfo& get_last_task() {
+        return tasks.rbegin()->second;
+    }
+
+    Ui::MainWindow *ui;
+    uint8_t line_number;
+    uint8_t task_number = 0;
+
+    std::vector<string> vsds_names;
+
+    QTcpSocket *socket;
+    std::map<uint8_t, TaskInfo> tasks;
+};*/
+
 
 public:
     MainWindow(QWidget *parent = nullptr);
@@ -241,13 +275,33 @@ private slots:
     void on_add_line_pushbutton_clicked();
 
     std::vector<TaskInfo> get_tasks_for_line(uint line_number) {
-        auto tasks_it = tasks_per_line.find(line_number);
-        if(tasks_it == tasks_per_line.end()) {
-            qDebug() << "Tasks doesn't exist! ERROR";
-            return {};
+        //std::vector<int> matches;
+        //std::copy_if(tasks.begin(), tasks.end(), std::back_inserter(matches), [&](int v) {
+        //    return v == findValue;
+        //});
+        //
+        //auto tasks_it = tasks.find(line_number);
+        //if(tasks_it == tasks.end()) {
+        //    qDebug() << "Tasks doesn't exist! ERROR";
+        //    return {};
+        //}
+        //
+        //return tasks_it->second;
+    }
+
+    LineConnector& create_connector_if_needed(uint line_number, QTcpSocket * socket) {
+        auto connector_itr = std::find_if(begin(connectors), end(connectors),
+                                        [&line_number](auto connector) { return line_number == connector.line_number;});
+
+        if(connector_itr == end(connectors)) {
+            connectors.emplace_back(socket, line_number);
+        }
+        else if(connector_itr->socket != socket) {
+            connector_itr->socket->close();
+            connector_itr->socket = socket;
         }
 
-        return tasks_it->second;
+        return *connector_itr;
     }
 
 private:
@@ -259,9 +313,11 @@ private:
 
     //LineDescriptor *line_descriptor;
     std::vector<LineConnector> connectors;
-    std::map<uint8_t, std::vector<TaskInfo>> tasks_per_line;
+    std::list<TaskInfo> tasks;
     std::vector<std::string> vsds_names;
     std::vector<QTcpSocket *> sockets;
+
+    uint8_t task_counter = 0;
 
     int current = 0;
     int lines = 0;
