@@ -52,9 +52,6 @@ MainWindow::MainWindow(QWidget *parent)
     save_folder = save_folder_child.text().get();
     cout << "save_folder: " << save_folder << endl;
 
-    // Прочитать vsd
-    update_xml();
-
     mTcpServer = new QTcpServer(this);
 
     connect(mTcpServer, &QTcpServer::newConnection, this, &MainWindow::on_new_connection);
@@ -63,8 +60,73 @@ MainWindow::MainWindow(QWidget *parent)
         cout << "tcp_server status=not_started " << endl;
     else
         cout << "tcp_server status=started " << endl;
+
+    QStringList headers;
+    headers << trUtf8("Продукция")
+            << trUtf8("ВСД");
+
+    ui->table->show();
+    ui->table->setColumnCount(2); // Указываем число колонок
+    ui->table->setShowGrid(true); // Включаем сетку
+    // Разрешаем выделение только одного элемента
+    ui->table->setSelectionMode(QAbstractItemView::SingleSelection);
+    // Разрешаем выделение построчно
+    ui->table->setSelectionBehavior(QAbstractItemView::SelectRows);
+    // Устанавливаем заголовки колонок
+    ui->table->setHorizontalHeaderLabels(headers);
+    // Растягиваем последнюю колонку на всё доступное пространство
+    ui->table->horizontalHeader()->setStretchLastSection(true);
+    // Скрываем колонку под номером 0
+    //ui->tableWidget->hideColumn(0);
+
+    auto vsd_per_names = fill_table();
+
+    QStringList items;
+    for(auto const& [name, vsd]: vsd_per_names)
+        items.append(QString::fromStdString(name));
+
+    ui->product_name_combobox->addItems(items);
 }
 
+map<std::string, std::string>  MainWindow::fill_table() {
+    std::map<std::string, std::string> vsds;
+
+    fs::current_path(save_folder);
+
+    pugi::xml_document doc;
+    if (!doc.load_file("positions.xml")) {
+        cout << "Load XML positions.xml FAILED" << endl;
+        return {};
+    } else {
+        cout << "Load XML positions.xml SUCCESS" << endl;
+    }
+
+    pugi::xml_node inn_xml = doc.child("resources").child("inn");
+    pugi::xml_node version = doc.child("resources").child("version");
+
+    pugi::xml_node positions_xml = doc.child("resources").child("input");
+
+    if (positions_xml.children("position").begin() == positions_xml.children("position").end()) {
+        cout << "Positions in positions.xml absent ERROR" << endl;
+        return {};
+    }
+
+    int row = 0;
+    for (pugi::xml_node position_xml: positions_xml.children("position")) {
+        std::string position_name = position_xml.attribute("name_english").as_string();
+        std::string vsd = position_xml.attribute("vsd").as_string();
+
+        ui->table->insertRow(row);
+        ui->table->setItem(row,0, new QTableWidgetItem(QString::fromStdString(position_name)));
+        ui->table->setItem(row,1, new QTableWidgetItem(QString::fromStdString(vsd)));
+
+        vsds.emplace(position_name,vsd);
+    }
+
+    ui->table->resizeColumnsToContents();
+
+    return vsds;
+}
 
 void MainWindow::on_new_connection() {
     QTcpSocket * new_socket = mTcpServer->nextPendingConnection();
@@ -129,7 +191,6 @@ void MainWindow::on_new_connection() {
     connect(new_socket, &QTcpSocket::readyRead, this, &MainWindow::on_server_read);
     connect(new_socket, &QTcpSocket::disconnected, this, &MainWindow::on_client_disconnected);
 }
-
 
 void MainWindow::on_server_read() {
     QTcpSocket* socket = qobject_cast< QTcpSocket* >(sender());
@@ -397,13 +458,12 @@ void MainWindow::on_client_disconnected() {
     socket->close();
 }
 
-
 MainWindow::~MainWindow() {
     delete ui;
 }
 
-
 void MainWindow::on_make_template_pushbutton_clicked() {
+    update_xml_with_vsds_from_table();
     //------------------------File choose-----------------------------
     QString ki_name = QFileDialog::getOpenFileName(this, "Ki", QString::fromStdString(save_folder));
     qDebug() << "Filename ki: " << ki_name;
@@ -583,43 +643,37 @@ void MainWindow::on_add_line_pushbutton_clicked() {
     ui->lines_layout->addLayout(inserted_task.layout());
 }
 
-std::map<std::string, std::string> MainWindow::get_vsds(const std::string & vsd_path) {
-    std::ifstream vsd;
+map<string, string> MainWindow::get_vsds() {
+    map<string, string> vsds;
 
-    std::cout<<"vsd_path: " << vsd_path <<std::endl;
+    for (int i=0; i< ui->table->rowCount(); i++) {
+        string name;
+        string vsd;
 
-    vsd.open(vsd_path);
-    if(not vsd.is_open()) {
-        std::cout<<"Open vsd.csv ERROR"<<std::endl;
-        return {};
-    } else {
-        std::cout<<"Open vsd.csv success"<<std::endl;
-    }
+        for (int j=0; j < ui->table->columnCount(); j++) {
+            QTableWidgetItem *item =  ui->table->item(i,j);
+            //item->setFlags(Qt::NoItemFlags);
+            if(j == 0)
+                name.assign(item->text().toStdString());
+            else if(j == 1)
+                vsd.assign(item->text().toStdString());
+        }
 
-    std::map<std::string, std::string> vsds;
-    std::string line;
-    for (int i = 0; std::getline(vsd, line); ++i) {
-        int comma_pos = line.find(",");
-        string name = line.substr(0, comma_pos);
-        string vsd = line.substr(comma_pos + 1);
-
-        cout << "name: " << name << ", vsd: " << vsd << endl;
-        vsds.emplace(name,vsd);
-        ui->product_name_combobox->addItem(QString::fromStdString(name));
+        vsds[name] = vsd;
     }
 
     return vsds;
 }
 
-void MainWindow::update_xml() {
-    const string vsd_path = string(save_folder + "vsd.csv");
-
-    const auto& vsd_per_names = get_vsds(vsd_path);
+void MainWindow::update_xml_with_vsds_from_table() {
+    const auto& vsd_per_names = get_vsds();
     if(vsd_per_names.empty()) {
         cout << "VSD not foungd ERROR" << endl;
         throw std::logic_error("error");
         close(); // не помню, что за close()
     }
+
+    fs::current_path(save_folder);
 
     // XML open
     pugi::xml_document doc;

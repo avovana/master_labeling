@@ -223,40 +223,6 @@ struct LineConnector {
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
-/*
-struct LineDescriptor {
-    //Q_OBJECT
-    LineDescriptor(Ui::MainWindow *ui_, uint line_number_, vector<string> vsds_names_) :
-        ui(ui_),
-        line_number(line_number_),
-        vsds_names(vsds_names_)
-    {
-        add_task();
-    }
-
-    void add_task() {
-        ++task_number;
-        TaskInfo ti = TaskInfo(ui, line_number, vsds_names);
-        //tasks[task_number] = TaskInfo(ui, line_number, vsds_names);
-        //tasks.emplace(line_number, ti);
-        tasks.try_emplace(line_number, ui, line_number, vsds_names);
-    }
-
-    const TaskInfo& get_last_task() {
-        return tasks.rbegin()->second;
-    }
-
-    Ui::MainWindow *ui;
-    uint8_t line_number;
-    uint8_t task_number = 0;
-
-    std::vector<string> vsds_names;
-
-    QTcpSocket *socket;
-    std::map<uint8_t, TaskInfo> tasks;
-};*/
-
-
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
@@ -269,8 +235,7 @@ public slots:
 private slots:
     void on_make_template_pushbutton_clicked();
 
-    std::map<std::string, std::string> get_vsds(const std::string & vsd_path);
-    void update_xml(); // Почти всё можно сделать DEBUG LVL. Главное - сделать тест и чтобы он срабатывал
+    std::map<std::string, std::string> get_vsds();
 
     void on_add_line_pushbutton_clicked();
 
@@ -288,6 +253,9 @@ private slots:
         //
         //return tasks_it->second;
     }
+
+    std::map<std::string, std::string> fill_table();
+    void update_xml_with_vsds_from_table();
 
     pair<bool, TaskInfo&> get_task(uint8_t line_number, uint8_t task_number) {
         auto task_itr = std::find_if(begin(tasks), end(tasks),
@@ -318,7 +286,6 @@ private:
     QTcpServer * mTcpServer;
     QTcpSocket * mTcpSocket;
 
-    //LineDescriptor *line_descriptor;
     std::vector<LineConnector> connectors;
     std::list<TaskInfo> tasks;
     std::vector<std::string> vsds_names;

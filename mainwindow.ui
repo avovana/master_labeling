@@ -235,7 +235,7 @@ color: rgb(255, 255, 255);font-weight: bold;</string>
      </widget>
     </item>
     <item row="3" column="0" colspan="10">
-     <widget class="QTableWidget" name="tableWidget"/>
+     <widget class="QTableWidget" name="table"/>
     </item>
    </layout>
   </widget>
