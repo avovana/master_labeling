@@ -289,6 +289,13 @@ private slots:
         //return tasks_it->second;
     }
 
+    pair<bool, TaskInfo&> get_task(uint8_t line_number, uint8_t task_number) {
+        auto task_itr = std::find_if(begin(tasks), end(tasks),
+                                        [&](auto task) { return line_number == task.line_number && task.task_number == task_number;});
+
+        return {task_itr == end(tasks), *task_itr};
+    }
+
     LineConnector& create_connector_if_needed(uint line_number, QTcpSocket * socket) {
         auto connector_itr = std::find_if(begin(connectors), end(connectors),
                                         [&line_number](auto connector) { return line_number == connector.line_number;});

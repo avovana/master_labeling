@@ -305,10 +305,8 @@ void MainWindow::on_server_read() {
                     found_task = true;
                 }
             }
-            if(not found_task) {
+            if(not found_task)
                 qDebug() << "Task doesn't exist! ERROR" << msg_type;
-                return;
-            }
         }
         break;
         case 3: // End receive
@@ -350,21 +348,28 @@ void MainWindow::on_server_read() {
 
             QString product_name;
             bool found_task = false;
+            //
+            //for(auto& task: tasks) {
+            //    if(task.line_number == line_number && task.task_number == task_number) {
+            //        product_name = task.product_name();
+            //        task.set_status(TaskStatus::FINISHED);
+            //        found_task = true;
+            //        break;
+            //    }
+            //}
+            //if(not found_task) {
+            //    qDebug() << "Task doesn't exist! ERROR" << msg_type;
+            //    return;
+            //}
+            //auto& task = get_task(line_number, line_number);
+            auto [exist, task] = get_task(line_number, line_number);
 
-            for(auto& task: tasks) {
-                if(task.line_number == line_number && task.task_number == task_number) {
-                    product_name = task.product_name();
-                    task.set_status(TaskStatus::FINISHED);
-                    found_task = true;
-                    break;
-                }
-            }
-            if(not found_task) {
-                qDebug() << "Task doesn't exist! ERROR" << msg_type;
+            if(not exist) {
+                qDebug() << "task doesn't exist! ERROR";
                 return;
             }
 
-            std::string filename = product_name.toStdString() + "_" + scans_number + "_" + time_ts + ".txt";
+            std::string filename = task.product_name().toStdString() + "_" + scans_number + "_" + time_ts + ".txt";
             qDebug() << "filename=" << filename.c_str();
 
             std::ofstream out(filename);
@@ -372,6 +377,7 @@ void MainWindow::on_server_read() {
             out.close();
 
             qDebug() << "file save done";
+            task.set_status(TaskStatus::FINISHED);
 
 //            auto it = descriptor_itr->tasks.find(task_number);
 //            if (it != descriptor_itr->tasks.end()) {

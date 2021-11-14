@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>735</width>
+    <width>738</width>
     <height>162</height>
    </rect>
   </property>
@@ -18,36 +18,6 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0" colspan="2">
-     <widget class="QPushButton" name="make_template_pushbutton">
-      <property name="font">
-       <font>
-        <pointsize>14</pointsize>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>Создать шаблон</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0">
-     <widget class="QLabel" name="line_number_label">
-      <property name="font">
-       <font>
-        <pointsize>14</pointsize>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>Линия</string>
-      </property>
-     </widget>
-    </item>
     <item row="1" column="1">
      <widget class="QLabel" name="scaner_status_label">
       <property name="font">
@@ -63,20 +33,21 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="3" colspan="2">
-     <widget class="QComboBox" name="product_name_combobox">
+    <item row="1" column="8">
+     <widget class="QPushButton" name="add_line_pushbutton">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="font">
        <font>
-        <family>Arial</family>
         <pointsize>14</pointsize>
-        <weight>75</weight>
-        <bold>true</bold>
        </font>
       </property>
       <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);
-font-family: Arial;
-color: rgb(255, 255, 255);font-weight: bold;</string>
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>+</string>
       </property>
      </widget>
     </item>
@@ -148,6 +119,45 @@ color: rgb(255, 255, 255);font-weight: bold;</string>
       </item>
      </widget>
     </item>
+    <item row="0" column="0" colspan="2">
+     <widget class="QPushButton" name="make_template_pushbutton">
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>Создать шаблон</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="3" colspan="2">
+     <widget class="QComboBox" name="product_name_combobox">
+      <property name="font">
+       <font>
+        <family>Arial</family>
+        <pointsize>14</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);
+font-family: Arial;
+color: rgb(255, 255, 255);font-weight: bold;</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="7">
+     <widget class="QLabel" name="column_for_start_label">
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </item>
     <item row="1" column="3" colspan="2">
      <widget class="QLabel" name="product_name_label">
       <property name="font">
@@ -160,61 +170,6 @@ color: rgb(255, 255, 255);font-weight: bold;</string>
       </property>
       <property name="text">
        <string>Наименование продукции</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="5">
-     <widget class="QLabel" name="plan_label">
-      <property name="font">
-       <font>
-        <pointsize>14</pointsize>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>План</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="8">
-     <widget class="QPushButton" name="add_line_pushbutton">
-      <property name="enabled">
-       <bool>true</bool>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>14</pointsize>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>+</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="7">
-     <widget class="QLabel" name="column_for_start_label">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="8" colspan="2">
-     <widget class="QLabel" name="create_line_label">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>Создать товар для линии</string>
       </property>
      </widget>
     </item>
@@ -234,6 +189,54 @@ color: rgb(255, 255, 255);font-weight: bold;</string>
       </property>
      </layout>
     </item>
+    <item row="1" column="5">
+     <widget class="QLabel" name="plan_label">
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>План</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="line_number_label">
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>Линия</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="8" colspan="2">
+     <widget class="QLabel" name="create_line_label">
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>Создать товар для линии</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0" colspan="10">
+     <widget class="QTableWidget" name="tableWidget"/>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -241,7 +244,7 @@ color: rgb(255, 255, 255);font-weight: bold;</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>735</width>
+     <width>738</width>
      <height>22</height>
     </rect>
    </property>
