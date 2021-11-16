@@ -46,7 +46,7 @@ enum class TaskStatus {
 };
 
 struct TaskInfo {
-    TaskInfo(uint8_t line_number_, uint8_t task_number_, vector<string> vsds_names):
+    TaskInfo(uint8_t line_number_, uint8_t task_number_, const vector<string>& product_names):
         line_number(line_number_),
         task_number(task_number_)
     {
@@ -66,8 +66,8 @@ struct TaskInfo {
         product_name_combobox->setStyleSheet("QLineEdit{font-size: 24px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
         product_name_combobox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         product_name_combobox->setStyleSheet("QComboBox{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
-        for(auto vsd_name : vsds_names)
-            product_name_combobox->addItem(QString::fromStdString(vsd_name));
+        for(auto& name : product_names)
+            product_name_combobox->addItem(QString::fromStdString(name));
 
         plan_lineedit = new QLineEdit();
         plan_lineedit->setStyleSheet("QLineEdit{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
@@ -176,10 +176,11 @@ struct LineConnector {
 
             socket->write(out_array);
         } else {
-            string msg;
-            for(auto &task: tasks)
-                msg.append(task);
+            string msg("1,m,5;");
+            //for(auto &task: tasks)
+            //    msg.append(task);
 
+            qDebug() << "msg = " << QString::fromStdString(msg);
             qDebug() << "msg_size = " << msg.size();
 
             QByteArray out_array;
@@ -199,7 +200,9 @@ struct LineConnector {
 
             qDebug() << "out_array_size=" << out_array.size();
 
+            qDebug() << "socket " << socket;
             socket->write(out_array);
+            qDebug() << "here";
         }
     }
 
@@ -270,11 +273,17 @@ private slots:
 
         if(connector_itr == end(connectors)) {
             connectors.emplace_back(socket, line_number);
+            qDebug() << "connector_itr == end(connectors)";
+            qDebug() << "create_connector_if_needed " << socket;
+            qDebug() << "create_connector_if_needed " << &*socket;
         }
         else if(connector_itr->socket != socket) {
+            qDebug() << "connector_itr->socket != socket";
             connector_itr->socket->close();
             connector_itr->socket = socket;
         }
+
+        qDebug() << "create_connector_if_needed " << connector_itr->socket;
 
         return *connector_itr;
     }
@@ -288,7 +297,7 @@ private:
 
     std::vector<LineConnector> connectors;
     std::list<TaskInfo> tasks;
-    std::vector<std::string> vsds_names;
+    std::vector<std::string> product_names;
     std::vector<QTcpSocket *> sockets;
 
     uint8_t task_counter = 0;

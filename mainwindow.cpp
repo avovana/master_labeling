@@ -82,8 +82,10 @@ MainWindow::MainWindow(QWidget *parent)
     auto vsd_per_names = fill_table();
 
     QStringList items;
-    for(auto const& [name, vsd]: vsd_per_names)
+    for(auto const& [name, vsd]: vsd_per_names) {
         items.append(QString::fromStdString(name));
+        product_names.push_back(name);
+    }
 
     ui->product_name_combobox->addItems(items);
 }
@@ -130,7 +132,7 @@ map<std::string, std::string>  MainWindow::fill_table() {
 
 void MainWindow::on_new_connection() {
     QTcpSocket * new_socket = mTcpServer->nextPendingConnection();
-
+    qDebug() << "on_new_connection " << new_socket;
     sockets.push_back(new_socket);
     qDebug() << "Local:";
     qDebug() << new_socket->localAddress();
@@ -238,9 +240,12 @@ void MainWindow::on_server_read() {
 
     uint32_t body_size = array.size() - 3;
 
-    qDebug() << "msg_type = " << msg_type << " line_number = " << line_number << " INFO";
+    qDebug() << "msg_type = " << msg_type << " line_number = " << line_number << " task_number = " << task_number << " INFO";
 
-    auto& connector = create_connector_if_needed(line_number, socket);
+    qDebug() << "receive method socket " << socket;
+    qDebug() << "receive method socket " << &*socket;
+    //auto& connector = create_connector_if_needed(line_number, socket);
+
 
     switch(msg_type) {
         case 1: // Info request
@@ -258,7 +263,55 @@ void MainWindow::on_server_read() {
                 }
             }
 
-            connector.send_tasks(tasks_info);
+            //connector.send_tasks(tasks_info);
+
+            //===========
+
+            if(tasks_info.empty()) {
+                QByteArray out_array;
+                QDataStream stream(&out_array, QIODevice::WriteOnly);
+                unsigned int type = 8;
+                unsigned int out_msg_size = sizeof(type);
+                stream << out_msg_size;
+                stream << type;
+
+                qDebug() << "out_array_size=" << out_array.size();
+
+                socket->write(out_array);
+            } else {
+                //string msg("1,m,5;");
+                string msg;
+                for(auto &task: tasks_info)
+                    msg.append(task);
+
+                qDebug() << "msg = " << QString::fromStdString(msg);
+                qDebug() << "msg_size = " << msg.size();
+
+                QByteArray out_array;
+                QDataStream stream(&out_array, QIODevice::WriteOnly);
+                unsigned int out_msg_size = msg.size() + sizeof(unsigned int);
+                unsigned int type = 4;
+                stream << out_msg_size;
+                stream << type;
+                stream.writeRawData(msg.c_str(), msg.size());
+
+                for(int i = 0; i < out_array.count(); ++i)
+                  qDebug() << out_array.count() << QString::number(out_array[i], 16);
+
+                qDebug() << "out_array=" << out_array;
+                for(int i = 0; i < out_array.count(); ++i)
+                  qDebug() << "out_array[" << i << "] " << out_array[i];
+
+                qDebug() << "out_array_size=" << out_array.size();
+
+                qDebug() << "socket " << socket;
+                socket->write(out_array);
+                qDebug() << "here";
+            }
+
+            //===========
+
+
         /*
         switch(line_number) {
             case 1:
@@ -635,7 +688,7 @@ void MainWindow::send_ready_to_slave() {
 void MainWindow::on_add_line_pushbutton_clicked() {
     auto line_number = ui->line_number_choose_combobox->currentText().toInt();
 
-    auto& inserted_task = tasks.emplace_back(line_number, ++task_counter, vsds_names); // implicitly uint -> uint8_t for line_number
+    auto& inserted_task = tasks.emplace_back(line_number, ++task_counter, product_names); // implicitly uint -> uint8_t for line_number
 
     //inserted_task_it->add_task();
     connect(inserted_task.start_button(), &QPushButton::clicked, this, &MainWindow::send_ready_to_slave);
@@ -689,7 +742,7 @@ void MainWindow::update_xml_with_vsds_from_table() {
 
     for (auto const& [name, vsd] : vsd_per_names) {
         std::cout << "  vsd name: " << name << std::endl;
-        vsds_names.push_back(name);
+
         for (pugi::xml_node position_xml: positions_xml.children("position")) {
             std::string name_in_xml = position_xml.attribute("name_english").as_string();
             std::cout << "   name_in_xml: " << name_in_xml << std::endl;
