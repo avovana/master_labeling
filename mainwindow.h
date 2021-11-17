@@ -176,9 +176,9 @@ struct LineConnector {
 
             socket->write(out_array);
         } else {
-            string msg("1,m,5;");
-            //for(auto &task: tasks)
-            //    msg.append(task);
+            std::string msg;
+            for(auto &task: tasks)
+                msg.append(task);
 
             qDebug() << "msg = " << QString::fromStdString(msg);
             qDebug() << "msg_size = " << msg.size();
@@ -261,29 +261,40 @@ private slots:
     void update_xml_with_vsds_from_table();
 
     pair<bool, TaskInfo&> get_task(uint8_t line_number, uint8_t task_number) {
-        auto task_itr = std::find_if(begin(tasks), end(tasks),
-                                        [&](auto task) { return line_number == task.line_number && task.task_number == task_number;});
+        qDebug() << "look for line_number: " << line_number << " task: " << task_number;
+        auto task_itr = std::find_if(begin(tasks), end(tasks),[&](auto task) {
+            qDebug() << "task.line_number: " << task.line_number << " task.task_number: " << task.task_number;
+            return (line_number == task.line_number) && (task.task_number == task_number);});
 
-        return {task_itr == end(tasks), *task_itr};
+        if(task_itr == end(tasks)) {
+            qDebug() << "Task didnt found line_number: " << line_number << " task: " << task_number;
+        }
+
+        return {task_itr != end(tasks), *task_itr};
     }
 
     LineConnector& create_connector_if_needed(uint line_number, QTcpSocket * socket) {
+        qDebug() << "1";
         auto connector_itr = std::find_if(begin(connectors), end(connectors),
                                         [&line_number](auto connector) { return line_number == connector.line_number;});
 
+        qDebug() << "2";
         if(connector_itr == end(connectors)) {
             connectors.emplace_back(socket, line_number);
             qDebug() << "connector_itr == end(connectors)";
-            qDebug() << "create_connector_if_needed " << socket;
-            qDebug() << "create_connector_if_needed " << &*socket;
+            qDebug() << "create_connector_if_needed " << socket; //qDebug() << "create_connector_if_needed " << &*socket;
+
+            qDebug() << "3";
+            return connectors.back();
         }
         else if(connector_itr->socket != socket) {
             qDebug() << "connector_itr->socket != socket";
             connector_itr->socket->close();
             connector_itr->socket = socket;
+            qDebug() << "4";
         }
 
-        qDebug() << "create_connector_if_needed " << connector_itr->socket;
+        qDebug() << "5";
 
         return *connector_itr;
     }

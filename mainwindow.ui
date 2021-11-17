@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>738</width>
-    <height>162</height>
+    <height>213</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,8 +18,25 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="1" column="1">
-     <widget class="QLabel" name="scaner_status_label">
+    <item row="0" column="3" colspan="2">
+     <widget class="QComboBox" name="product_name_combobox">
+      <property name="font">
+       <font>
+        <family>Arial</family>
+        <pointsize>14</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);
+font-family: Arial;
+color: rgb(255, 255, 255);font-weight: bold;</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="3" colspan="2">
+     <widget class="QLabel" name="product_name_label">
       <property name="font">
        <font>
         <pointsize>14</pointsize>
@@ -29,7 +46,7 @@
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
       <property name="text">
-       <string>Связь</string>
+       <string>Наименование продукции</string>
       </property>
      </widget>
     </item>
@@ -51,20 +68,8 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="6">
-     <widget class="QLabel" name="current_label">
-      <property name="font">
-       <font>
-        <pointsize>14</pointsize>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>Факт</string>
-      </property>
-     </widget>
+    <item row="3" column="0" colspan="10">
+     <widget class="QTableWidget" name="table"/>
     </item>
     <item row="1" column="9">
      <widget class="QComboBox" name="line_number_choose_combobox">
@@ -119,6 +124,58 @@
       </item>
      </widget>
     </item>
+    <item row="0" column="8" colspan="2">
+     <widget class="QLabel" name="create_line_label">
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>Создать товар для линии</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="line_number_label">
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>Линия</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="7">
+     <widget class="QLabel" name="column_for_start_label">
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="6">
+     <widget class="QLabel" name="current_label">
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>Факт</string>
+      </property>
+     </widget>
+    </item>
     <item row="0" column="0" colspan="2">
      <widget class="QPushButton" name="make_template_pushbutton">
       <property name="font">
@@ -131,45 +188,6 @@
       </property>
       <property name="text">
        <string>Создать шаблон</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="3" colspan="2">
-     <widget class="QComboBox" name="product_name_combobox">
-      <property name="font">
-       <font>
-        <family>Arial</family>
-        <pointsize>14</pointsize>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);
-font-family: Arial;
-color: rgb(255, 255, 255);font-weight: bold;</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="7">
-     <widget class="QLabel" name="column_for_start_label">
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="3" colspan="2">
-     <widget class="QLabel" name="product_name_label">
-      <property name="font">
-       <font>
-        <pointsize>14</pointsize>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>Наименование продукции</string>
       </property>
      </widget>
     </item>
@@ -189,6 +207,21 @@ color: rgb(255, 255, 255);font-weight: bold;</string>
       </property>
      </layout>
     </item>
+    <item row="1" column="1">
+     <widget class="QLabel" name="scaner_status_label">
+      <property name="font">
+       <font>
+        <pointsize>14</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color: rgb(141, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>Связь</string>
+      </property>
+     </widget>
+    </item>
     <item row="1" column="5">
      <widget class="QLabel" name="plan_label">
       <property name="font">
@@ -204,8 +237,8 @@ color: rgb(255, 255, 255);font-weight: bold;</string>
       </property>
      </widget>
     </item>
-    <item row="1" column="0">
-     <widget class="QLabel" name="line_number_label">
+    <item row="4" column="0" colspan="2">
+     <widget class="QPushButton" name="save_vsd_button">
       <property name="font">
        <font>
         <pointsize>14</pointsize>
@@ -215,27 +248,9 @@ color: rgb(255, 255, 255);font-weight: bold;</string>
        <string notr="true">background-color: rgb(141, 255, 255);</string>
       </property>
       <property name="text">
-       <string>Линия</string>
+       <string>Сохранить всд</string>
       </property>
      </widget>
-    </item>
-    <item row="0" column="8" colspan="2">
-     <widget class="QLabel" name="create_line_label">
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background-color: rgb(141, 255, 255);</string>
-      </property>
-      <property name="text">
-       <string>Создать товар для линии</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="0" colspan="10">
-     <widget class="QTableWidget" name="table"/>
     </item>
    </layout>
   </widget>

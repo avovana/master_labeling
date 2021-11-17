@@ -55,6 +55,7 @@ MainWindow::MainWindow(QWidget *parent)
     mTcpServer = new QTcpServer(this);
 
     connect(mTcpServer, &QTcpServer::newConnection, this, &MainWindow::on_new_connection);
+    connect(ui->save_vsd_button, &QPushButton::clicked, this, &MainWindow::update_xml_with_vsds_from_table);
 
     if(not mTcpServer->listen(QHostAddress::Any, 6000))
         cout << "tcp_server status=not_started " << endl;
@@ -195,6 +196,7 @@ void MainWindow::on_new_connection() {
 }
 
 void MainWindow::on_server_read() {
+    qDebug() << __PRETTY_FUNCTION__ << "================";
     QTcpSocket* socket = qobject_cast< QTcpSocket* >(sender());
 
     qDebug() << "bytes_available=" << socket->bytesAvailable();
@@ -244,12 +246,15 @@ void MainWindow::on_server_read() {
 
     qDebug() << "receive method socket " << socket;
     qDebug() << "receive method socket " << &*socket;
-    //auto& connector = create_connector_if_needed(line_number, socket);
-
+    auto& connector = create_connector_if_needed(line_number, socket);
+    qDebug() << "connector " << &connector;
+    bool res = connector.socket == nullptr;
+    qDebug() << "here " << res ;
 
     switch(msg_type) {
         case 1: // Info request
         {
+            qDebug() << "Info request--------";
             vector<string> tasks_info;
 
             for(auto& task: tasks) {
@@ -263,54 +268,7 @@ void MainWindow::on_server_read() {
                 }
             }
 
-            //connector.send_tasks(tasks_info);
-
-            //===========
-
-            if(tasks_info.empty()) {
-                QByteArray out_array;
-                QDataStream stream(&out_array, QIODevice::WriteOnly);
-                unsigned int type = 8;
-                unsigned int out_msg_size = sizeof(type);
-                stream << out_msg_size;
-                stream << type;
-
-                qDebug() << "out_array_size=" << out_array.size();
-
-                socket->write(out_array);
-            } else {
-                //string msg("1,m,5;");
-                string msg;
-                for(auto &task: tasks_info)
-                    msg.append(task);
-
-                qDebug() << "msg = " << QString::fromStdString(msg);
-                qDebug() << "msg_size = " << msg.size();
-
-                QByteArray out_array;
-                QDataStream stream(&out_array, QIODevice::WriteOnly);
-                unsigned int out_msg_size = msg.size() + sizeof(unsigned int);
-                unsigned int type = 4;
-                stream << out_msg_size;
-                stream << type;
-                stream.writeRawData(msg.c_str(), msg.size());
-
-                for(int i = 0; i < out_array.count(); ++i)
-                  qDebug() << out_array.count() << QString::number(out_array[i], 16);
-
-                qDebug() << "out_array=" << out_array;
-                for(int i = 0; i < out_array.count(); ++i)
-                  qDebug() << "out_array[" << i << "] " << out_array[i];
-
-                qDebug() << "out_array_size=" << out_array.size();
-
-                qDebug() << "socket " << socket;
-                socket->write(out_array);
-                qDebug() << "here";
-            }
-
-            //===========
-
+            connector.send_tasks(tasks_info);
 
         /*
         switch(line_number) {
@@ -406,6 +364,7 @@ void MainWindow::on_server_read() {
 
         case 2: // Scan receive
         {
+            qDebug() << "Scan receive--------";
             QByteArray buffer(body_size, Qt::Uninitialized);
 
             received_bytes.readRawData(buffer.data(), body_size);
@@ -425,6 +384,7 @@ void MainWindow::on_server_read() {
         break;
         case 3: // End receive
         {
+            qDebug() << "File receive--------";
             QByteArray buffer(body_size, Qt::Uninitialized);
 
             received_bytes.readRawData(buffer.data(), body_size);
@@ -461,7 +421,7 @@ void MainWindow::on_server_read() {
             qDebug() << "fs::current_path=" << fs::current_path().c_str();
 
             QString product_name;
-            bool found_task = false;
+            //bool found_task = false;
             //
             //for(auto& task: tasks) {
             //    if(task.line_number == line_number && task.task_number == task_number) {
@@ -476,22 +436,77 @@ void MainWindow::on_server_read() {
             //    return;
             //}
             //auto& task = get_task(line_number, line_number);
-            auto [exist, task] = get_task(line_number, line_number);
+            //auto [exist, task] = get_task(line_number, line_number);
 
-            if(not exist) {
-                qDebug() << "task doesn't exist! ERROR";
-                return;
+//            if(not exist) {
+//                qDebug() << "task doesn't exist! ERROR";
+//                return;
+//            }
+
+            for(auto& task: tasks) {
+                if(task.line_number == line_number) {
+                    if(task.number() == task_number) {
+                        std::string filename = task.product_name().toStdString() + "_" + scans_number + "_" + time_ts + ".csv";
+                        qDebug() << "filename=" << filename.c_str();
+
+                        std::ofstream out(filename);
+                        out << scans.toStdString();
+                        out.close();
+
+                        qDebug() << "file save done";
+                        task.set_status(TaskStatus::FINISHED);
+                        qDebug() << "111";
+
+
+                    }
+                }
             }
 
-            std::string filename = task.product_name().toStdString() + "_" + scans_number + "_" + time_ts + ".txt";
-            qDebug() << "filename=" << filename.c_str();
 
-            std::ofstream out(filename);
-            out << scans.toStdString();
-            out.close();
 
-            qDebug() << "file save done";
-            task.set_status(TaskStatus::FINISHED);
+
+
+
+
+
+//            for(auto& task: tasks) {
+//                qDebug() << "task.number() " << task.number();
+//                qDebug() << "task.line_number " << task.line_number;
+//                qDebug() << "task.product_name() " << task.product_name();
+//            }
+
+//            qDebug() << "look for line_number: " << line_number << " task: " << task_number;
+//            auto task_itr = std::find_if(begin(tasks), end(tasks),[&](auto task) {
+//                qDebug() << "task.line_number: " << task.line_number << " task.task_number: " << task.task_number;
+//                return (line_number == task.line_number) && (task.task_number == task_number);});
+
+//            if(task_itr == end(tasks)) {
+//                qDebug() << "Task didnt found line_number: " << line_number << " task: " << task_number;
+//                return;
+//            }
+
+//            std::string filename = task_itr->product_name().toStdString() + "_" + scans_number + "_" + time_ts + ".txt";
+//            qDebug() << "filename=" << filename.c_str();
+
+//            std::ofstream out(filename);
+//            out << scans.toStdString();
+//            out.close();
+
+//            qDebug() << "file save done";
+//            task_itr->set_status(TaskStatus::FINISHED);
+//            qDebug() << "111";
+
+
+
+
+
+
+
+
+
+
+
+
 
 //            auto it = descriptor_itr->tasks.find(task_number);
 //            if (it != descriptor_itr->tasks.end()) {
@@ -516,7 +531,6 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::on_make_template_pushbutton_clicked() {
-    update_xml_with_vsds_from_table();
     //------------------------File choose-----------------------------
     QString ki_name = QFileDialog::getOpenFileName(this, "Ki", QString::fromStdString(save_folder));
     qDebug() << "Filename ki: " << ki_name;
@@ -721,7 +735,7 @@ map<string, string> MainWindow::get_vsds() {
 void MainWindow::update_xml_with_vsds_from_table() {
     const auto& vsd_per_names = get_vsds();
     if(vsd_per_names.empty()) {
-        cout << "VSD not foungd ERROR" << endl;
+        cout << "VSD not found ERROR" << endl;
         throw std::logic_error("error");
         close(); // не помню, что за close()
     }
@@ -730,7 +744,7 @@ void MainWindow::update_xml_with_vsds_from_table() {
 
     // XML open
     pugi::xml_document doc;
-    if (doc.load_file((save_folder + "positions.xml").c_str())) {
+    if (doc.load_file("positions.xml")) {
         cout << "Load XML success" << endl;
     } else {
         cout << "Load XML ERROR" << endl;
