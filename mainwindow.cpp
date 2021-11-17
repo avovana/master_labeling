@@ -589,14 +589,17 @@ void MainWindow::on_make_template_pushbutton_clicked() {
     //------------------------Make file-----------------------------
 
     std::string date_pattern = std::string("%Y-%m-%d");
+    std::string d_m_pattern = std::string("%d-%m");
     std::string time_pattern = std::string("%H-%M");
     char date_buffer [80];
+    char d_m_buffer [80];
     char time_buffer [80];
 
     time_t t = time(0);
     struct tm * now = localtime( & t );
     strftime (date_buffer,80,date_pattern.c_str(),now);
     strftime (time_buffer,80,time_pattern.c_str(),now);
+    strftime (d_m_buffer,80,d_m_pattern.c_str(),now);
 
     // Подсчитать кол-во сканов
     string s;
@@ -616,7 +619,7 @@ void MainWindow::on_make_template_pushbutton_clicked() {
 
     string filename = product_name + "_" + to_string(sTotal) + "_" + std::string(time_buffer) + ".csv";
 
-    string working_dir = save_folder + "/input/" + std::string(date_buffer);
+    string working_dir = save_folder + "/input/" + std::string(d_m_buffer);
     fs::create_directories(working_dir);
     fs::current_path(working_dir);
     std::ofstream template_file;
