@@ -144,56 +144,7 @@ void MainWindow::on_new_connection() {
     qDebug() << "Peer:";
     qDebug() << new_socket->peerAddress();
     qDebug() << new_socket->peerPort();
-    /* QByteArray ba;
-      ba.resize(4);
-      ba[0] = 0x04;
-      ba[1] = 0x00;
-      ba[2] = 0x00;
-      ba[3] = 0x0;
-    mTcpSocket->write(ba);
-    -> client:
-    Received! Yeah!
-    header_data_str:
-    header_data:  b'\x04\x00\x00\x00'
-    Я внутри!
-    msg_len:  4
-    */
 
-    /* mTcpSocket->write("4abc\r\n");
-    -> client:
-    Received! Yeah!
-    header_data_str:  4abc
-    header_data:  b'4abc'
-    Я внутри!
-    msg_len:  1667391796
-    */
-
-    /* mTcpSocket->write("4");
-    -> client:
-    Received! Yeah!
-    */
-
-    /* mTcpSocket->write("4000");
-    -> client:
-    Received! Yeah!
-    header_data_str:  4000
-    header_data:  b'4000'
-    Я внутри!
-    msg_len:  808464436
-
-    т.е. пришло 4 байта. Ок. В этих байтах...
-    */
-
-    /*
-    QByteArray ba;
-          ba.resize(4);
-          ba[0] = 0x04;
-          ba[1] = 0x00;
-          ba[2] = 0x00;
-          ba[3] = 0x0;
-        mTcpSocket->write(ba);
-        mTcpSocket->write("1234");
-    */
     connect(new_socket, &QTcpSocket::readyRead, this, &MainWindow::on_server_read);
     connect(new_socket, &QTcpSocket::disconnected, this, &MainWindow::on_client_disconnected);
 }
@@ -272,96 +223,6 @@ void MainWindow::on_server_read() {
             }
 
             connector.send_tasks(tasks_info);
-
-        /*
-        switch(line_number) {
-            case 1:
-            {
-
-
-            //QByteArray header;
-            //header.resize(4);
-            //header[0] = 0x01;
-            //header[1] = 0x00;
-            //header[2] = 0x00;
-            //header[3] = 0x00;
-
-            //QByteArray out_array;
-            //QDataStream out_stream(out_array);
-            //out_stream << 5;
-            //unsigned int ll = 1234;
-            //out_array.setNum(ll);
-
-            //QString msg;
-            //msg.append("Sir Kavkazkiu").append(",").append(QString::number(plan));
-            //qDebug() << "msg" << msg;
-            //qDebug() << "msg.size(): " << msg.size();
-            //qDebug() << "msg.count(): " << msg.count();
-            //mTcpSocket->write(msg.toStdString().c_str(), msg.count());
-
-
-
-            //QByteArray out_msg_buf;
-            //QDataStream outStream(&out_msg_buf, QIODevice::WriteOnly);
-            //outStream<<msg;
-            //
-            //qDebug() << "msg.size(): " << msg.size();
-            //qDebug() << "out_msg_buf: " << out_msg_buf.size();
-            //for(int i = 0; i < out_msg_buf.count(); ++i) {
-            //  qDebug() << "\ x" << QString::number(out_msg_buf[i], 16);
-            //}
-            //
-            //qDebug() << "============";
-        //    mTcpSocket->write(out_msg_buf);
-
-
-            //mTcpSocket->write(msg.c_str(), msg.size());
-
-
-            //mTcpSocket->write("1"); // 1 = OK
-
-        //    std::cout << "DataAsString.toStdString(): " << str;
-        //    std::cout << "DataAsString.toStdString().size(): " << str.size();
-        //    //ds.setByteOrder(QDataStream::LittleEndian);
-        //    uint32_t header1; // Since the size you're trying to read appears to be 2 bytes
-        //    uint8_t msg_type;
-        //    uint8_t line_number;
-        //    //std::string str;
-        //    ds >> header1;
-        //    ds >> msg_type;
-        //    ds >> line_number;
-        //
-        //    qDebug() << "header1: " << header1;
-        //    qDebug() << "msg_type: " << msg_type;
-        //    qDebug() << "line_number: " << line_number;
-        //
-        //    qDebug() << "array.mid(0,4): " << array.mid(0,4);
-        //    qDebug() << "array.mid(4,1): " << array.mid(4,1);
-        //    qDebug() << "array.mid(5,1): " << array.mid(5,1);
-        //    qDebug() << "array.mid(6,array.end()): " << array.mid(6,array.size() - 1);
-        //    uint32_t header = array.mid(0,4).toUInt();
-        //    qDebug() << "array.mid(0,4).toUInt(): " << array.mid(0,4).toUInt();
-        //    qDebug() << "array.mid(0,4).toULong(): " << array.mid(0,4).toULong();
-        //    qDebug() << "sizeof(uint): " << sizeof(uint);
-        //    qDebug() << "sizeof(ulong): " << sizeof(ulong);
-        //
-        //
-            //QByteArray header;
-            //header.resize(4);
-            //header[0] = 0x01;
-            //header[1] = 0x00;
-            //header[2] = 0x00;
-            //header[3] = 0x00;
-            //
-            //mTcpSocket->write(header);
-            //
-            //mTcpSocket->write("1"); // 1 = OK
-            //
-            //qDebug() << "slotServerRead end";
-
-
-            }
-            break;*/
         }
         break;
 
@@ -424,27 +285,6 @@ void MainWindow::on_server_read() {
             qDebug() << "fs::current_path=" << fs::current_path().c_str();
 
             QString product_name;
-            //bool found_task = false;
-            //
-            //for(auto& task: tasks) {
-            //    if(task.line_number == line_number && task.task_number == task_number) {
-            //        product_name = task.product_name();
-            //        task.set_status(TaskStatus::FINISHED);
-            //        found_task = true;
-            //        break;
-            //    }
-            //}
-            //if(not found_task) {
-            //    qDebug() << "Task doesn't exist! ERROR" << msg_type;
-            //    return;
-            //}
-            //auto& task = get_task(line_number, line_number);
-            //auto [exist, task] = get_task(line_number, line_number);
-
-//            if(not exist) {
-//                qDebug() << "task doesn't exist! ERROR";
-//                return;
-//            }
 
             for(auto& task: tasks) {
                 qDebug() << "1";
@@ -462,69 +302,12 @@ void MainWindow::on_server_read() {
                         qDebug() << "file save done";
                         task.set_status(TaskStatus::FINISHED);
                         qDebug() << "111";
-
-
                     }
                 }
             }
-
-
-
-
-
-
-
-
-//            for(auto& task: tasks) {
-//                qDebug() << "task.number() " << task.number();
-//                qDebug() << "task.line_number " << task.line_number;
-//                qDebug() << "task.product_name() " << task.product_name();
-//            }
-
-//            qDebug() << "look for line_number: " << line_number << " task: " << task_number;
-//            auto task_itr = std::find_if(begin(tasks), end(tasks),[&](auto task) {
-//                qDebug() << "task.line_number: " << task.line_number << " task.task_number: " << task.task_number;
-//                return (line_number == task.line_number) && (task.task_number == task_number);});
-
-//            if(task_itr == end(tasks)) {
-//                qDebug() << "Task didnt found line_number: " << line_number << " task: " << task_number;
-//                return;
-//            }
-
-//            std::string filename = task_itr->product_name().toStdString() + "_" + scans_number + "_" + time_ts + ".txt";
-//            qDebug() << "filename=" << filename.c_str();
-
-//            std::ofstream out(filename);
-//            out << scans.toStdString();
-//            out.close();
-
-//            qDebug() << "file save done";
-//            task_itr->set_status(TaskStatus::FINISHED);
-//            qDebug() << "111";
-
-
-
-
-
-
-
-
-
-
-
-
-
-//            auto it = descriptor_itr->tasks.find(task_number);
-//            if (it != descriptor_itr->tasks.end()) {
-//                delete it->second;
-//                it->tasks.erase(it);
-//            }
-
-//            qDebug() << "task finished";
         }
         break;
     }
-
 }
 
 void MainWindow::on_client_disconnected() {
