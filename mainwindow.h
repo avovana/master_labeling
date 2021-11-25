@@ -41,9 +41,12 @@ std::ostream& operator<<(std::ostream&  out, Position& pos);
 
 enum class TaskStatus {
     INIT,
-    STARTED,
+    TASK_SEND,
+    IN_PROGRESS,
     FINISHED
 };
+
+std::ostream& operator<< (std::ostream& os, TaskStatus state);
 
 struct TaskInfo {
     TaskInfo(uint8_t line_number_, uint8_t task_number_, const map<string, string>& product_names_):
@@ -76,11 +79,11 @@ struct TaskInfo {
         current_label = new QLineEdit();
         current_label->setStyleSheet("QLineEdit{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
         current_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        line_start_pushbutton = new QPushButton();
-        line_start_pushbutton->setText("Старт");
-        line_start_pushbutton->setStyleSheet("QPushButton{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
-        line_start_pushbutton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        line_start_pushbutton->setObjectName(QString("%1;%2").arg(line_number).arg(task_number));
+        line_state_pushbutton = new QPushButton();
+        line_state_pushbutton->setText("Ожидание подключения линии");
+        line_state_pushbutton->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
+        line_state_pushbutton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        line_state_pushbutton->setObjectName(QString("%1;%2").arg(line_number).arg(task_number));
 
         //static int line_position = 2;
         //line_position++;
@@ -89,7 +92,7 @@ struct TaskInfo {
         new_layout->addWidget(product_name_combobox);
         new_layout->addWidget(plan_lineedit);
         new_layout->addWidget(current_label);
-        new_layout->addWidget(line_start_pushbutton);
+        new_layout->addWidget(line_state_pushbutton);
     }
 
     ~TaskInfo() {
@@ -99,15 +102,15 @@ struct TaskInfo {
         delete product_name_combobox;
         delete plan_lineedit;
         delete current_label;
-        delete line_start_pushbutton;
+        delete line_state_pushbutton;
     }
 
     auto& layout() {
         return new_layout;
     }
 
-    auto& start_button() {
-        return line_start_pushbutton;
+    auto& state_button() {
+        return line_state_pushbutton;
     }
 
     auto number() {
@@ -131,21 +134,25 @@ struct TaskInfo {
     }
 
     void set_status(TaskStatus status_) {
-        status = status_;
-        switch (status) {
+        m_status = status_;
+        switch (m_status) {
         case TaskStatus::INIT:
             ;
             break;
-        case TaskStatus::STARTED:
+        case TaskStatus::IN_PROGRESS:
             line_status_label->setStyleSheet("QLabel{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: green;}");
             break;
         case TaskStatus::FINISHED:
-            line_start_pushbutton->setStyleSheet("QPushButton{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: red;}");
-            line_start_pushbutton->setText("Файл получен");
+            line_state_pushbutton->setStyleSheet("QPushButton{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: red;}");
+            line_state_pushbutton->setText("Файл получен");
             break;
         default:
             break;
         }
+    }
+
+    auto status() {
+        return m_status;
     }
 
     Ui::MainWindow *ui;
@@ -156,11 +163,12 @@ struct TaskInfo {
     QComboBox *product_name_combobox;
     QLineEdit *plan_lineedit;
     QLineEdit *current_label;
-    QPushButton *line_start_pushbutton;
+    QPushButton *line_state_pushbutton;
     uint8_t task_number = 0;
     uint8_t line_number = 0;
-    TaskStatus status = TaskStatus::INIT;
+    TaskStatus m_status = TaskStatus::INIT;
     map<string, string> product_names;
+    string file_name;
 };
 
 struct LineConnector {
@@ -240,7 +248,7 @@ public slots:
     void on_new_connection();
     void on_server_read();
     void on_client_disconnected();
-    void send_ready_to_slave();
+    void make_next_action();
 private slots:
     void on_make_template_pushbutton_clicked();
 

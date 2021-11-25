@@ -35,6 +35,25 @@ ostream& operator<<( ostream&  out, Position& pos ) {
     return out;
 }
 
+ostream& operator<<( ostream&  out, TaskStatus& state ) {
+    switch (state) {
+    case TaskStatus::INIT:
+        out << "INIT";
+        break;
+    case TaskStatus::TASK_SEND:
+        out << "TASK_SEND";
+        break;
+    case TaskStatus::IN_PROGRESS:
+        out << "IN_PROGRESS";
+        break;
+    case TaskStatus::FINISHED:
+        out << "FINISHED";
+        break;
+    }
+
+    return out;
+}
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow) {
@@ -217,7 +236,8 @@ void MainWindow::on_server_read() {
                     auto name = task.product_name_eng();
                     auto plan = task.plan();
                     auto info = QString("%1:%2:%3;").arg(number).arg(QString::fromStdString(name)).arg(plan).toStdString();
-                    task.set_status(TaskStatus::STARTED);
+                    task.set_status(TaskStatus::TASK_SEND);
+                    task.state_button()->setText("Задача передана. Разрешить старт");
                     tasks_info.push_back(info);
                 }
             }
@@ -276,10 +296,14 @@ void MainWindow::on_server_read() {
             qDebug() << "date=" << date.c_str();
             qDebug() << "time_ts=" << time_ts.c_str();
 
+            fs::path work_path = save_folder;
+            work_path /= "ki";
+            work_path /= std::string(date_buffer);
+            qDebug() << "work_path: " << work_path.c_str();
             string working_dir = save_folder + "ki\\" + std::string(date_buffer);
             qDebug() << "working_dir=" << working_dir.c_str();
-            fs::create_directories(working_dir);
-            fs::current_path(working_dir);
+            fs::create_directories(work_path);
+            fs::current_path(work_path);
             string scans_number = to_string(scans.count(QChar('\n')) + 1);
             qDebug() << "scans_number=" << scans_number.c_str();
             qDebug() << "fs::current_path=" << fs::current_path().c_str();
@@ -294,13 +318,17 @@ void MainWindow::on_server_read() {
                         qDebug() << "3";
                         std::string filename = task.product_name_rus() + "__" + scans_number + " штук__" + time_ts + ".csv";
                         qDebug() << "filename=" << filename.c_str();
-
-                        std::ofstream out(filename);
+                        work_path /= filename;
+                        qDebug() << "work_path: " << work_path.c_str();
+                        task.file_name = work_path;
+                        std::ofstream out(work_path);
                         out << scans.toStdString();
                         out.close();
 
                         qDebug() << "file save done";
                         task.set_status(TaskStatus::FINISHED);
+                        task.state_button()->setText("Завершено. Сделать шаблон");
+                        task.state_button()->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: green;}");
                         qDebug() << "111";
                     }
                 }
@@ -469,25 +497,216 @@ void MainWindow::on_make_template_pushbutton_clicked() {
     }
 }
 
-void MainWindow::send_ready_to_slave() {
+void MainWindow::make_next_action() {
+    qDebug() << __PRETTY_FUNCTION__ << "===============";
     QPushButton * senderButton = qobject_cast<QPushButton *>(this->sender());
     auto name = senderButton->objectName();
 
     uint8_t line_number = name.mid(0,name.indexOf(';')).toUInt();
+    qDebug() << "line_number: " << line_number;
 
     auto connector_itr = std::find_if(begin(connectors), end(connectors),
                                     [&line_number](auto connector) { return line_number == connector.line_number;});
 
+    qDebug() << "connector_itr: " << &connector_itr;
     if(connector_itr == end(connectors)) {
         qDebug() << "Connection wasn't established ERROR";
         return;
     }
 
-    connector_itr->send_ready();
+    bool need_to_delete = false;
 
     for(auto& task : tasks) {
-        if(task.line_number == line_number)
-            task.start_button()->setStyleSheet("QPushButton{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: green;}");
+        qDebug() << "task.line_number: " << task.line_number;
+        if(task.line_number == line_number) {
+            //cout << "task.status(): " << task.status();
+            switch (task.status()) {
+            case TaskStatus::INIT:
+                break;
+            case TaskStatus::TASK_SEND:
+                task.state_button()->setStyleSheet("QPushButton{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: grey;}");
+                task.state_button()->setText("В работе");
+                connector_itr->send_ready();
+                task.set_status(TaskStatus::IN_PROGRESS);
+                break;
+            case TaskStatus::FINISHED:
+                {
+                //------------------------File choose-----------------------------
+//                QString ki_name = QFileDialog::getOpenFileName(this, "Ki", QString::fromStdString(save_folder));
+                QString ki_name = QString::fromStdString(task.file_name);
+                qDebug() << "Filename ki: " << ki_name;
+//                qDebug() << "product_name: " << ui->product_name_combobox->currentText();
+//                string product_name = ui->product_name_combobox->currentText().toStdString();
+                qDebug() << "product_name: " << QString::fromStdString(task.product_name_eng());
+                string product_name = task.product_name_eng();
+                if(ki_name.isEmpty())
+                    return;
+
+                //------------------------Download config-----------------------------
+                Position position;
+
+                cout << "fs::current_path(): " << fs::current_path() << endl;
+                for (const auto & entry : fs::directory_iterator(fs::current_path()))
+                    std::cout << entry.path() << std::endl;
+
+                fs::current_path(save_folder);
+                cout << "fs::current_path(): " << fs::current_path() << endl;
+
+                pugi::xml_document doc;
+                if (!doc.load_file("positions.xml")) {
+                    cout << "Load XML positions.xml FAILED" << endl;
+                    return;
+                } else {
+                    cout << "Load XML positions.xml SUCCESS" << endl;
+                }
+
+                pugi::xml_node inn_xml = doc.child("resources").child("inn");
+                pugi::xml_node version = doc.child("resources").child("version");
+
+                pugi::xml_node positions_xml = doc.child("resources").child("input");
+
+                if (positions_xml.children("position").begin() == positions_xml.children("position").end()) {
+                    cout << "Positions in positions.xml absent ERROR" << endl;
+                    return;
+                }
+
+                for (pugi::xml_node position_xml: positions_xml.children("position")) {
+                    std::string position_name = position_xml.attribute("name_english").as_string();
+                    std::cout << "position_name=" << position_name << endl;
+
+                    if(product_name == position_name) {
+                        position = Position{position_xml.attribute("code_tn_ved").as_string(),
+                                                     position_xml.attribute("document_type").as_string(),
+                                                     position_xml.attribute("document_number").as_string(),
+                                                     position_xml.attribute("document_date").as_string(),
+                                                     position_xml.attribute("vsd").as_string(),
+                                                     position_name,
+                                                     inn_xml.text().get(),
+                                                     position_xml.attribute("name_english").as_string(),
+                                                     position_xml.attribute("expected").as_int(),
+                                                     position_xml.attribute("current").as_int()};
+
+                        std::cout << "position=" << endl << position << endl;
+                    }
+                }
+                //------------------------Make file-----------------------------
+
+                std::string date_pattern = std::string("%Y-%m-%d");
+                std::string d_m_pattern = std::string("%d-%m");
+                std::string time_pattern = std::string("%H-%M");
+                char date_buffer [80];
+                char d_m_buffer [80];
+                char time_buffer [80];
+
+                time_t t = time(0);
+                struct tm * now = localtime( & t );
+                strftime (date_buffer,80,date_pattern.c_str(),now);
+                strftime (time_buffer,80,time_pattern.c_str(),now);
+                strftime (d_m_buffer,80,d_m_pattern.c_str(),now);
+
+                // Подсчитать кол-во сканов
+                string s;
+                int sTotal = 0;
+
+                ifstream in;
+                in.open(ki_name.toStdString());
+
+                while(!in.eof()) {
+                    getline(in, s);
+                    sTotal ++;
+                }
+
+                cout << "sTotal: " << sTotal << endl;
+                in.close();
+                // Создать файл
+
+                string filename = task.product_name_rus() + "__" + to_string(sTotal) + "штук__" + std::string(time_buffer) + ".csv";
+
+
+
+
+
+
+                fs::path work_path = save_folder;
+                work_path /= "input";
+                work_path /= std::string(d_m_buffer);
+                qDebug() << "work_path: " << work_path.c_str();
+
+                fs::create_directories(work_path);
+                fs::current_path(work_path);
+                qDebug() << "fs::current_path=" << fs::current_path().c_str();
+
+                std::ofstream template_file;
+
+                template_file.open(filename, std::ios_base::app);
+                if(not template_file.is_open()) {
+                    std::cout<<"Ошибка создания файла шаблона"<<std::endl;
+                    return;
+                }
+                //------------------------Header-----------------------------
+
+                template_file << "ИНН участника оборота,ИНН производителя,ИНН собственника,Дата производства,Тип производственного заказа,Версия" << endl;
+                template_file << position.inn << "," << position.inn << "," << position.inn << "," << date_buffer << ",Собственное производство,4" << endl;
+                template_file << "КИ,КИТУ,Дата производства,Код ТН ВЭД ЕАС товара,Вид документа подтверждающего соответствие,Номер документа подтверждающего соответствие,Дата документа подтверждающего соответствие,Идентификатор ВСД" << endl;
+
+                //------------------------Scans-----------------------------
+
+                //Открыть ки файл. Считывать строку за строкой. Дописывать в результирующий файл
+
+                std::ifstream infile;
+
+                infile.open(ki_name.toStdString(), std::ios_base::app);
+                if(not infile.is_open()) {
+                    std::cout<<"Ошибка открытия ки файла"<<std::endl;
+                    return;
+                }
+
+                //auto lines = std::count(std::istreambuf_iterator<char>(infile),
+                //             std::istreambuf_iterator<char>(), '\n');
+                //
+                //cout << "lines: " << lines << endl;
+
+                std::string scan;
+
+                while (std::getline(infile, scan)) {
+                    char gs = 29;
+                    auto pos = scan.find(gs);
+
+                    scan = scan.substr(0,pos);
+
+                    scan = std::regex_replace(scan, std::regex("\""), "\"\"");
+                    scan.insert(0, 1, '"');
+                    scan.push_back('"');
+
+                    template_file << scan << ","
+                       << ","
+                       << date_buffer << ","
+                       << position.code_tn_ved << ","
+                       << position.document_type << ","
+                       << position.document_number << ","
+                       << position.document_date << ","
+                       << position.vsd;
+
+                    if(--sTotal > 0)
+                        template_file << endl;
+
+                    need_to_delete = true;
+                }
+                }
+                break;
+            default:
+                break;
+            }
+        }
+    }
+
+    qDebug() << "tasks.size(): " << tasks.size();
+    qDebug() << "need_to_delete: " << need_to_delete;
+    if(need_to_delete) {
+        qDebug() << "tasks.size(): " << tasks.size();
+        auto removed_task_it = remove_if(begin(tasks), end(tasks), [&](auto & task) {return task.line_number == line_number;});
+        tasks.erase(removed_task_it, end(tasks));
+        qDebug() << "tasks.size(): " << tasks.size();
     }
 }
 
@@ -497,7 +716,7 @@ void MainWindow::on_add_line_pushbutton_clicked() {
     auto& inserted_task = tasks.emplace_back(line_number, ++task_counter, product_names); // implicitly uint -> uint8_t for line_number
 
     //inserted_task_it->add_task();
-    connect(inserted_task.start_button(), &QPushButton::clicked, this, &MainWindow::send_ready_to_slave);
+    connect(inserted_task.state_button(), &QPushButton::clicked, this, &MainWindow::make_next_action);
 
     ui->lines_layout->addLayout(inserted_task.layout());
 }
