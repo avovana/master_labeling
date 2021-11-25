@@ -46,9 +46,10 @@ enum class TaskStatus {
 };
 
 struct TaskInfo {
-    TaskInfo(uint8_t line_number_, uint8_t task_number_, const vector<string>& product_names):
+    TaskInfo(uint8_t line_number_, uint8_t task_number_, const map<string, string>& product_names_):
         line_number(line_number_),
-        task_number(task_number_)
+        task_number(task_number_),
+        product_names(product_names_)
     {
         new_layout = new QHBoxLayout();
 
@@ -66,8 +67,8 @@ struct TaskInfo {
         product_name_combobox->setStyleSheet("QLineEdit{font-size: 24px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
         product_name_combobox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         product_name_combobox->setStyleSheet("QComboBox{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
-        for(auto& name : product_names)
-            product_name_combobox->addItem(QString::fromStdString(name));
+        for(auto& [name_rus, name_eng] : product_names)
+            product_name_combobox->addItem(QString::fromStdString(name_rus));
 
         plan_lineedit = new QLineEdit();
         plan_lineedit->setStyleSheet("QLineEdit{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
@@ -113,8 +114,12 @@ struct TaskInfo {
         return task_number;
     }
 
-    auto product_name() {
-        return product_name_combobox->currentText();
+    auto product_name_eng() {
+        return product_names[product_name_combobox->currentText().toStdString()];
+    }
+
+    auto product_name_rus() {
+        return product_name_combobox->currentText().toStdString();
     }
 
     auto plan() {
@@ -155,6 +160,7 @@ struct TaskInfo {
     uint8_t task_number = 0;
     uint8_t line_number = 0;
     TaskStatus status = TaskStatus::INIT;
+    map<string, string> product_names;
 };
 
 struct LineConnector {
@@ -308,7 +314,7 @@ private:
 
     std::vector<LineConnector> connectors;
     std::list<TaskInfo> tasks;
-    std::vector<std::string> product_names;
+    map<string, string> product_names;
     std::vector<QTcpSocket *> sockets;
 
     uint8_t task_counter = 0;

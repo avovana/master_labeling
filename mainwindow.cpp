@@ -80,19 +80,19 @@ MainWindow::MainWindow(QWidget *parent)
     // Скрываем колонку под номером 0
     //ui->tableWidget->hideColumn(0);
 
-    auto vsd_per_names = fill_table();
+    auto rus_eng_names = fill_table();
 
     QStringList items;
-    for(auto const& [name, vsd]: vsd_per_names) {
-        items.append(QString::fromStdString(name));
-        product_names.push_back(name);
+    for(auto const& [name_rus, name_eng]: rus_eng_names) {
+        items.append(QString::fromStdString(name_rus));
+        product_names[name_rus] = name_eng;
     }
 
     ui->product_name_combobox->addItems(items);
 }
 
 map<std::string, std::string>  MainWindow::fill_table() {
-    std::map<std::string, std::string> vsds;
+    std::map<std::string, std::string> rus_eng_names;
 
     fs::current_path(save_folder);
 
@@ -116,19 +116,22 @@ map<std::string, std::string>  MainWindow::fill_table() {
 
     int row = 0;
     for (pugi::xml_node position_xml: positions_xml.children("position")) {
-        std::string position_name = position_xml.attribute("name_english").as_string();
+        std::string name_eng = position_xml.attribute("name_english").as_string();
+        std::string name_rus = position_xml.attribute("name").as_string();
         std::string vsd = position_xml.attribute("vsd").as_string();
+        qDebug() << position_xml.attribute("name").as_string();
+        qDebug() << position_xml.attribute("vsd").as_string();
 
         ui->table->insertRow(row);
-        ui->table->setItem(row,0, new QTableWidgetItem(QString::fromStdString(position_name)));
+        ui->table->setItem(row,0, new QTableWidgetItem(QString::fromStdString(name_rus)));
         ui->table->setItem(row,1, new QTableWidgetItem(QString::fromStdString(vsd)));
 
-        vsds.emplace(position_name,vsd);
+        rus_eng_names.emplace(name_rus, name_eng);
     }
 
     ui->table->resizeColumnsToContents();
 
-    return vsds;
+    return rus_eng_names;
 }
 
 void MainWindow::on_new_connection() {
@@ -260,9 +263,9 @@ void MainWindow::on_server_read() {
             for(auto& task: tasks) {
                 if(task.line_number == line_number) {
                     auto number = task.number();
-                    auto name = task.product_name();
+                    auto name = task.product_name_eng();
                     auto plan = task.plan();
-                    auto info = QString("%1,%2,%3;").arg(number).arg(name).arg(plan).toStdString();
+                    auto info = QString("%1:%2:%3;").arg(number).arg(QString::fromStdString(name)).arg(plan).toStdString();
                     task.set_status(TaskStatus::STARTED);
                     tasks_info.push_back(info);
                 }
@@ -444,9 +447,12 @@ void MainWindow::on_server_read() {
 //            }
 
             for(auto& task: tasks) {
+                qDebug() << "1";
                 if(task.line_number == line_number) {
+                    qDebug() << "2";
                     if(task.number() == task_number) {
-                        std::string filename = task.product_name().toStdString() + "_" + scans_number + "_" + time_ts + ".csv";
+                        qDebug() << "3";
+                        std::string filename = task.product_name_rus() + "__" + scans_number + " штук__" + time_ts + ".csv";
                         qDebug() << "filename=" << filename.c_str();
 
                         std::ofstream out(filename);
@@ -617,7 +623,7 @@ void MainWindow::on_make_template_pushbutton_clicked() {
     in.close();
     // Создать файл
 
-    string filename = product_name + "_" + to_string(sTotal) + "_" + std::string(time_buffer) + ".csv";
+    string filename = product_name + "__" + to_string(sTotal) + "штук__" + std::string(time_buffer) + ".csv";
 
     string working_dir = save_folder + "/input/" + std::string(d_m_buffer);
     fs::create_directories(working_dir);
