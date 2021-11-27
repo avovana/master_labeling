@@ -67,9 +67,8 @@ struct TaskInfo {
         line_status_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
         product_name_combobox = new QComboBox();
-        product_name_combobox->setStyleSheet("QLineEdit{font-size: 24px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
         product_name_combobox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        product_name_combobox->setStyleSheet("QComboBox{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
+        product_name_combobox->setStyleSheet("QComboBox{font-size: 20px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
         for(auto& [name_rus, name_eng] : product_names)
             product_name_combobox->addItem(QString::fromStdString(name_rus));
 

@@ -331,7 +331,7 @@ void MainWindow::on_server_read() {
             work_path /= filename;
             qDebug() << "work_path: " << work_path.c_str();
             task->file_name = work_path.string();
-            std::ofstream out(work_path);
+            std::ofstream out(work_path.string());
             out << scans.toStdString();
             out.close();
 
