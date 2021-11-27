@@ -54,8 +54,8 @@ struct TaskInfo {
         task_number(task_number_),
         product_names(product_names_)
     {
+        qDebug("Task line_number=%d, task_number=%d created INFO", line_number, task_number);
         new_layout = new QHBoxLayout();
-
         line_number_label = new QLabel();
         line_number_label->setStyleSheet("QLabel{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
         line_number_label->setText(QString::number(line_number));
@@ -103,6 +103,7 @@ struct TaskInfo {
         delete plan_lineedit;
         delete current_label;
         delete line_state_pushbutton;
+        qDebug("Task line_number=%d, task_number=%d removed INFO", line_number, task_number);
     }
 
     auto& layout() {
@@ -111,10 +112,6 @@ struct TaskInfo {
 
     auto& state_button() {
         return line_state_pushbutton;
-    }
-
-    auto number() {
-        return task_number;
     }
 
     auto product_name_eng() {
@@ -164,7 +161,7 @@ struct TaskInfo {
     QLineEdit *plan_lineedit;
     QLineEdit *current_label;
     QPushButton *line_state_pushbutton;
-    uint8_t task_number = 0;
+    const uint8_t task_number;
     uint8_t line_number = 0;
     TaskStatus m_status = TaskStatus::INIT;
     map<string, string> product_names;
@@ -177,7 +174,7 @@ struct LineConnector {
         line_number(line_number_)
     { }
 
-    void send_tasks(std::vector<std::string> tasks) {
+    void send_tasks(const std::vector<std::string> & tasks) {
         if(tasks.empty()) {
             QByteArray out_array;
             QDataStream stream(&out_array, QIODevice::WriteOnly);
@@ -214,9 +211,8 @@ struct LineConnector {
 
             qDebug() << "out_array_size=" << out_array.size();
 
-            qDebug() << "socket " << socket;
             socket->write(out_array);
-            qDebug() << "here";
+            qDebug() << "Wrote sucess INFO";
         }
     }
 
@@ -256,59 +252,33 @@ private slots:
 
     void on_add_line_pushbutton_clicked();
 
-    std::vector<TaskInfo> get_tasks_for_line(uint line_number) {
-        //std::vector<int> matches;
-        //std::copy_if(tasks.begin(), tasks.end(), std::back_inserter(matches), [&](int v) {
-        //    return v == findValue;
-        //});
-        //
-        //auto tasks_it = tasks.find(line_number);
-        //if(tasks_it == tasks.end()) {
-        //    qDebug() << "Tasks doesn't exist! ERROR";
-        //    return {};
-        //}
-        //
-        //return tasks_it->second;
+    std::vector<std::shared_ptr<TaskInfo>> get_tasks_for_line(uint line_number) {
+        std::vector<std::shared_ptr<TaskInfo>> tasks_for_line;
+
+        std::copy_if(tasks.begin(), tasks.end(), std::back_inserter(tasks_for_line),
+                                        [&](auto &task) { return line_number == task->line_number;});
+
+        return tasks_for_line;
     }
 
     std::map<std::string, std::string> fill_table();
     void update_xml_with_vsds_from_table();
 
-    pair<bool, TaskInfo&> get_task(uint8_t line_number, uint8_t task_number) {
-        qDebug() << "look for line_number: " << line_number << " task: " << task_number;
-        auto task_itr = std::find_if(begin(tasks), end(tasks),[&](auto task) {
-            qDebug() << "task.line_number: " << task.line_number << " task.task_number: " << task.task_number;
-            return (line_number == task.line_number) && (task.task_number == task_number);});
-
-        if(task_itr == end(tasks)) {
-            qDebug() << "Task didnt found line_number: " << line_number << " task: " << task_number;
-        }
-
-        return {task_itr != end(tasks), *task_itr};
-    }
-
     LineConnector& create_connector_if_needed(uint line_number, QTcpSocket * socket) {
-        qDebug() << "1";
         auto connector_itr = std::find_if(begin(connectors), end(connectors),
                                         [&line_number](auto connector) { return line_number == connector.line_number;});
 
-        qDebug() << "2";
         if(connector_itr == end(connectors)) {
             connectors.emplace_back(socket, line_number);
-            qDebug() << "connector_itr == end(connectors)";
-            qDebug() << "create_connector_if_needed " << socket; //qDebug() << "create_connector_if_needed " << &*socket;
+            qDebug() << "connector_itr == end(connectors) " << socket << " " << &*socket;
 
-            qDebug() << "3";
             return connectors.back();
         }
         else if(connector_itr->socket != socket) {
-            qDebug() << "connector_itr->socket != socket";
+            qDebug() << "connector_itr->socket != socket " << socket;
             connector_itr->socket->close();
             connector_itr->socket = socket;
-            qDebug() << "4";
         }
-
-        qDebug() << "5";
 
         return *connector_itr;
     }
@@ -321,7 +291,7 @@ private:
     QTcpSocket * mTcpSocket;
 
     std::vector<LineConnector> connectors;
-    std::list<TaskInfo> tasks;
+    std::list<std::shared_ptr<TaskInfo>> tasks;
     map<string, string> product_names;
     std::vector<QTcpSocket *> sockets;
 
