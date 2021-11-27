@@ -317,6 +317,7 @@ void MainWindow::on_server_read() {
             work_path /= "ki";
             work_path /= std::string(date_buffer);
             qDebug() << "work_path: " << work_path.c_str();
+            qDebug() << "work_path: " << QString::fromStdString(work_path.string());
             fs::create_directories(work_path);
             fs::current_path(work_path);
             string scans_number = to_string(scans.count(QChar('\n')) + 1);
@@ -329,7 +330,7 @@ void MainWindow::on_server_read() {
             qDebug() << "filename=" << filename.c_str();
             work_path /= filename;
             qDebug() << "work_path: " << work_path.c_str();
-            task->file_name = work_path;
+            task->file_name = work_path.string();
             std::ofstream out(work_path);
             out << scans.toStdString();
             out.close();
