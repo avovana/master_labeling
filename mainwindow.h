@@ -81,13 +81,13 @@ struct TaskInfo {
         plan_lineedit = new QLineEdit();
         plan_lineedit->setStyleSheet("QLineEdit{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
         plan_lineedit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        plan_lineedit->setMinimumWidth(70);
-        plan_lineedit->setMaximumWidth(70);
+        plan_lineedit->setMinimumWidth(100);
+        plan_lineedit->setMaximumWidth(100);
         current_label = new QLineEdit();
         current_label->setStyleSheet("QLineEdit{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
         current_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        current_label->setMinimumWidth(70);
-        current_label->setMaximumWidth(70);
+        current_label->setMinimumWidth(100);
+        current_label->setMaximumWidth(100);
         line_state_pushbutton = new QPushButton();
         line_state_pushbutton->setText("Ожидание подключения линии");
         line_state_pushbutton->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
