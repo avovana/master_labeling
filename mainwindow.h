@@ -57,41 +57,52 @@ struct TaskInfo {
         qDebug("Task line_number=%d, task_number=%d created INFO", line_number, task_number);
         new_layout = new QHBoxLayout();
         line_number_label = new QLabel();
-        line_number_label->setStyleSheet("QLabel{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
+        line_number_label->setStyleSheet("QLabel{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
         line_number_label->setText(QString::number(line_number));
         line_number_label->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-        line_number_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        line_number_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        line_number_label->setMinimumWidth(70);
+        line_number_label->setMaximumWidth(70);
 
         line_status_label = new QLabel();
-        line_status_label->setStyleSheet("QLabel{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
-        line_status_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        line_status_label->setStyleSheet("QLabel{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
+        line_status_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        line_status_label->setMinimumWidth(90);
+        line_status_label->setMaximumWidth(90);
 
         product_name_combobox = new QComboBox();
-        product_name_combobox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        product_name_combobox->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        product_name_combobox->setMinimumWidth(400);
+        product_name_combobox->setMaximumWidth(400);
         product_name_combobox->setStyleSheet("QComboBox{font-size: 20px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
         for(auto& [name_rus, name_eng] : product_names)
             product_name_combobox->addItem(QString::fromStdString(name_rus));
 
         plan_lineedit = new QLineEdit();
-        plan_lineedit->setStyleSheet("QLineEdit{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
-        plan_lineedit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        plan_lineedit->setStyleSheet("QLineEdit{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
+        plan_lineedit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        plan_lineedit->setMinimumWidth(70);
+        plan_lineedit->setMaximumWidth(70);
         current_label = new QLineEdit();
-        current_label->setStyleSheet("QLineEdit{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
-        current_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        current_label->setStyleSheet("QLineEdit{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
+        current_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        current_label->setMinimumWidth(70);
+        current_label->setMaximumWidth(70);
         line_state_pushbutton = new QPushButton();
         line_state_pushbutton->setText("Ожидание подключения линии");
         line_state_pushbutton->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
-        line_state_pushbutton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        line_state_pushbutton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         line_state_pushbutton->setObjectName(QString("%1;%2").arg(line_number).arg(task_number));
 
-        //static int line_position = 2;
-        //line_position++;
+        static int line_position = 2;
+        line_position++;
         new_layout->addWidget(line_number_label);
         new_layout->addWidget(line_status_label);
         new_layout->addWidget(product_name_combobox);
         new_layout->addWidget(plan_lineedit);
         new_layout->addWidget(current_label);
         new_layout->addWidget(line_state_pushbutton);
+        new_layout->setAlignment(Qt::AlignLeft);
     }
 
     ~TaskInfo() {
@@ -136,7 +147,7 @@ struct TaskInfo {
             ;
             break;
         case TaskStatus::IN_PROGRESS:
-            line_status_label->setStyleSheet("QLabel{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: green;}");
+            line_status_label->setStyleSheet("QLabel{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: green;}");
             break;
         case TaskStatus::FINISHED:
             line_state_pushbutton->setStyleSheet("QPushButton{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: red;}");
