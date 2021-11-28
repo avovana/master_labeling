@@ -536,7 +536,7 @@ void MainWindow::make_next_action() {
     case TaskStatus::INIT:
         break;
     case TaskStatus::TASK_SEND:
-        task->state_button()->setStyleSheet("QPushButton{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: grey;}");
+        task->state_button()->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: grey;}");
         task->state_button()->setText("В работе");
         connector_itr->send_ready();
         task->set_status(TaskStatus::IN_PROGRESS);

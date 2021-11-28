@@ -94,8 +94,8 @@ struct TaskInfo {
         line_state_pushbutton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         line_state_pushbutton->setObjectName(QString("%1;%2").arg(line_number).arg(task_number));
 
-        static int line_position = 2;
-        line_position++;
+//        static int line_position = 2;
+//        line_position++;
         new_layout->addWidget(line_number_label);
         new_layout->addWidget(line_status_label);
         new_layout->addWidget(product_name_combobox);
@@ -146,7 +146,7 @@ struct TaskInfo {
         case TaskStatus::INIT:
             ;
             break;
-        case TaskStatus::IN_PROGRESS:
+        case TaskStatus::TASK_SEND:
             line_status_label->setStyleSheet("QLabel{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: green;}");
             break;
         case TaskStatus::FINISHED:
