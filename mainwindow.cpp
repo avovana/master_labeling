@@ -59,9 +59,6 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow) {
     ui->setupUi(this);
 
-    ui->make_template_pushbutton->hide();
-    ui->product_name_combobox->hide();
-
     pugi::xml_document doc;
     if (!doc.load_file("vars.xml")) {
         cout << "Load vars XML FAILED" << endl;
@@ -355,13 +352,11 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::on_make_template_pushbutton_clicked() {
-    /*
     //------------------------File choose-----------------------------
     QString ki_name = QFileDialog::getOpenFileName(this, "Ki", QString::fromStdString(save_folder));
     qDebug() << "Filename ki: " << ki_name;
     qDebug() << "product_name: " << ui->product_name_combobox->currentText();
     string product_name = ui->product_name_combobox->currentText().toStdString();
-
     if(ki_name.isEmpty())
         return;
 
@@ -373,6 +368,7 @@ void MainWindow::on_make_template_pushbutton_clicked() {
         std::cout << entry.path() << std::endl;
 
     fs::current_path(save_folder);
+    cout << "fs::current_path(): " << fs::current_path() << endl;
 
     pugi::xml_document doc;
     if (!doc.load_file("positions.xml")) {
@@ -444,9 +440,15 @@ void MainWindow::on_make_template_pushbutton_clicked() {
 
     string filename = product_name + "__" + to_string(sTotal) + "штук__" + std::string(time_buffer) + ".csv";
 
-    string working_dir = save_folder + "/input/" + std::string(d_m_buffer);
-    fs::create_directories(working_dir);
-    fs::current_path(working_dir);
+    fs::path work_path = save_folder;
+    work_path /= "input";
+    work_path /= std::string(d_m_buffer);
+    qDebug() << "work_path: " << work_path.c_str();
+
+    fs::create_directories(work_path);
+    fs::current_path(work_path);
+    qDebug() << "fs::current_path=" << fs::current_path().c_str();
+
     std::ofstream template_file;
 
     template_file.open(filename, std::ios_base::app);
@@ -462,8 +464,6 @@ void MainWindow::on_make_template_pushbutton_clicked() {
 
     //------------------------Scans-----------------------------
 
-
-
     //Открыть ки файл. Считывать строку за строкой. Дописывать в результирующий файл
 
     std::ifstream infile;
@@ -473,11 +473,6 @@ void MainWindow::on_make_template_pushbutton_clicked() {
         std::cout<<"Ошибка открытия ки файла"<<std::endl;
         return;
     }
-
-    //auto lines = std::count(std::istreambuf_iterator<char>(infile),
-    //             std::istreambuf_iterator<char>(), '\n');
-    //
-    //cout << "lines: " << lines << endl;
 
     std::string scan;
 
@@ -503,7 +498,6 @@ void MainWindow::on_make_template_pushbutton_clicked() {
         if(--sTotal > 0)
             template_file << endl;
     }
-    */
 }
 
 void MainWindow::make_next_action() {
