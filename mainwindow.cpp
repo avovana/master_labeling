@@ -323,7 +323,7 @@ void MainWindow::on_server_read() {
 
             QString product_name;
 
-            std::string filename = task->product_name_rus() + "__" + scans_number + " штук__" + time_ts + ".csv";
+            std::string filename = task->product_name_eng() + "__" + scans_number + " __" + time_ts + ".csv";
             qDebug() << "filename=" << filename.c_str();
             work_path /= filename;
             qDebug() << "work_path: " << work_path.c_str();
@@ -389,8 +389,9 @@ void MainWindow::on_make_template_pushbutton_clicked() {
     }
 
     for (pugi::xml_node position_xml: positions_xml.children("position")) {
-        std::string position_name = position_xml.attribute("name_english").as_string();
-        std::cout << "position_name=" << position_name << endl;
+        std::string position_name = position_xml.attribute("name").as_string();
+        qDebug() << "position_name=" << QString::fromStdString(position_name) << endl;
+        qDebug() << "product_names[product_name]=" << QString::fromStdString(product_names[product_name]) << endl;
 
         if(product_name == position_name) {
             position = Position{position_xml.attribute("code_tn_ved").as_string(),
@@ -438,16 +439,19 @@ void MainWindow::on_make_template_pushbutton_clicked() {
     in.close();
     // Создать файл
 
-    string filename = product_name + "__" + to_string(sTotal) + "штук__" + std::string(time_buffer) + ".csv";
+    string filename = product_names[product_name] + "__" + to_string(sTotal) + "__" + std::string(time_buffer) + ".csv";
+    qDebug() << "filename=" << QString::fromStdString(filename);
 
     fs::path work_path = save_folder;
+    qDebug() << "work_path=" << QString::fromStdString(work_path.string());
     work_path /= "input";
     work_path /= std::string(d_m_buffer);
     qDebug() << "work_path: " << work_path.c_str();
+    qDebug() << "work_path: " << QString::fromStdString(work_path.string());
 
     fs::create_directories(work_path);
     fs::current_path(work_path);
-    qDebug() << "fs::current_path=" << fs::current_path().c_str();
+    qDebug() << "fs::current_path=" << QString::fromStdString(fs::current_path().string());
 
     std::ofstream template_file;
 
@@ -629,7 +633,7 @@ void MainWindow::make_next_action() {
         in.close();
         // Создать файл
 
-        string filename = task->product_name_rus() + "__" + to_string(sTotal) + "штук__" + std::string(time_buffer) + ".csv";
+        string filename = task->product_name_eng() + "__" + to_string(sTotal) + "__" + std::string(time_buffer) + ".csv";
 
         fs::path work_path = save_folder;
         work_path /= "input";
@@ -931,6 +935,9 @@ void MainWindow::update_xml_with_vsds_from_table() {
 
     fs::current_path(save_folder);
 
+    qDebug() << "save_folder=" << QString::fromStdString(save_folder);
+    qDebug() << "fs::current_path=" << QString::fromStdString(fs::current_path().string());
+
     // XML open
     pugi::xml_document doc;
     if (doc.load_file("positions.xml")) {
@@ -944,15 +951,15 @@ void MainWindow::update_xml_with_vsds_from_table() {
     pugi::xml_node positions_xml = doc.child("resources").child("input");
 
     for (auto const& [name, vsd] : vsd_per_names) {
-        std::cout << "  vsd name: " << name << std::endl;
+        qDebug() << "  vsd name: " << QString::fromStdString(name);
 
         for (pugi::xml_node position_xml: positions_xml.children("position")) {
-            std::string name_in_xml = position_xml.attribute("name_english").as_string();
-            std::cout << "   name_in_xml: " << name_in_xml << std::endl;
+            std::string name_in_xml = position_xml.attribute("name").as_string();
+            qDebug() << "   name_in_xml: " << QString::fromStdString(name_in_xml);
             if(name == name_in_xml) {
                 position_xml.attribute("vsd").set_value(vsd.c_str());
-                cout << "    name: " << name << endl;
-                cout << "    set vsd to xml: " << vsd << endl;
+                qDebug() << "    name: " << QString::fromStdString(name);
+                qDebug() << "    set vsd to xml: " << QString::fromStdString(vsd);
             }
         }
     }

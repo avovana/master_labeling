@@ -88,6 +88,7 @@ struct TaskInfo {
         current_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         current_label->setMinimumWidth(100);
         current_label->setMaximumWidth(100);
+        current_label->setReadOnly(true);
         line_state_pushbutton = new QPushButton();
         line_state_pushbutton->setText("Ожидание подключения линии");
         line_state_pushbutton->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
