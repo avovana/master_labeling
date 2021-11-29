@@ -108,6 +108,7 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     ui->product_name_combobox->addItems(items);
+    ui->product_name_for_task_combobox->addItems(items);
 }
 
 map<std::string, std::string>  MainWindow::fill_table() {
@@ -524,8 +525,6 @@ void MainWindow::make_next_action() {
         return;
     }
 
-    bool need_to_delete = false;
-
     auto task_it = std::find_if(begin(tasks), end(tasks),
                                             [&](auto &task) { return line_number == task->line_number && task_number == task->task_number;});
 
@@ -692,213 +691,28 @@ void MainWindow::make_next_action() {
 
             if(--sTotal > 0)
                 template_file << endl;
-
-            need_to_delete = true;
         }
+        qDebug() << "tasks.size(): " << tasks.size();
+        //auto it = find_if(tasks.begin(), tasks.end(),[&](auto & task) {return task->line_number == line_number;});
+        tasks.erase(task_it);
+        qDebug() << "tasks.size(): " << tasks.size();
         }
         break;
     default:
         break;
-    }
-
-/*
-    for(auto& task : tasks) {
-        qDebug() << "task.line_number: " << task.line_number;
-        if(task.line_number == line_number) {
-            //cout << "task.status(): " << task.status();
-            switch (task.status()) {
-            case TaskStatus::INIT:
-                break;
-            case TaskStatus::TASK_SEND:
-                task.state_button()->setStyleSheet("QPushButton{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: grey;}");
-                task.state_button()->setText("В работе");
-                connector_itr->send_ready();
-                task.set_status(TaskStatus::IN_PROGRESS);
-                break;
-            case TaskStatus::FINISHED:
-                {
-                //------------------------File choose-----------------------------
-//                QString ki_name = QFileDialog::getOpenFileName(this, "Ki", QString::fromStdString(save_folder));
-                QString ki_name = QString::fromStdString(task.file_name);
-                qDebug() << "Filename ki: " << ki_name;
-//                qDebug() << "product_name: " << ui->product_name_combobox->currentText();
-//                string product_name = ui->product_name_combobox->currentText().toStdString();
-                qDebug() << "product_name: " << QString::fromStdString(task.product_name_eng());
-                string product_name = task.product_name_eng();
-                if(ki_name.isEmpty())
-                    return;
-
-                //------------------------Download config-----------------------------
-                Position position;
-
-                cout << "fs::current_path(): " << fs::current_path() << endl;
-                for (const auto & entry : fs::directory_iterator(fs::current_path()))
-                    std::cout << entry.path() << std::endl;
-
-                fs::current_path(save_folder);
-                cout << "fs::current_path(): " << fs::current_path() << endl;
-
-                pugi::xml_document doc;
-                if (!doc.load_file("positions.xml")) {
-                    cout << "Load XML positions.xml FAILED" << endl;
-                    return;
-                } else {
-                    cout << "Load XML positions.xml SUCCESS" << endl;
-                }
-
-                pugi::xml_node inn_xml = doc.child("resources").child("inn");
-                pugi::xml_node version = doc.child("resources").child("version");
-
-                pugi::xml_node positions_xml = doc.child("resources").child("input");
-
-                if (positions_xml.children("position").begin() == positions_xml.children("position").end()) {
-                    cout << "Positions in positions.xml absent ERROR" << endl;
-                    return;
-                }
-
-                for (pugi::xml_node position_xml: positions_xml.children("position")) {
-                    std::string position_name = position_xml.attribute("name_english").as_string();
-                    std::cout << "position_name=" << position_name << endl;
-
-                    if(product_name == position_name) {
-                        position = Position{position_xml.attribute("code_tn_ved").as_string(),
-                                                     position_xml.attribute("document_type").as_string(),
-                                                     position_xml.attribute("document_number").as_string(),
-                                                     position_xml.attribute("document_date").as_string(),
-                                                     position_xml.attribute("vsd").as_string(),
-                                                     position_name,
-                                                     inn_xml.text().get(),
-                                                     position_xml.attribute("name_english").as_string(),
-                                                     position_xml.attribute("expected").as_int(),
-                                                     position_xml.attribute("current").as_int()};
-
-                        std::cout << "position=" << endl << position << endl;
-                    }
-                }
-                //------------------------Make file-----------------------------
-
-                std::string date_pattern = std::string("%Y-%m-%d");
-                std::string d_m_pattern = std::string("%d-%m");
-                std::string time_pattern = std::string("%H-%M");
-                char date_buffer [80];
-                char d_m_buffer [80];
-                char time_buffer [80];
-
-                time_t t = time(0);
-                struct tm * now = localtime( & t );
-                strftime (date_buffer,80,date_pattern.c_str(),now);
-                strftime (time_buffer,80,time_pattern.c_str(),now);
-                strftime (d_m_buffer,80,d_m_pattern.c_str(),now);
-
-                // Подсчитать кол-во сканов
-                string s;
-                int sTotal = 0;
-
-                ifstream in;
-                in.open(ki_name.toStdString());
-
-                while(!in.eof()) {
-                    getline(in, s);
-                    sTotal ++;
-                }
-
-                cout << "sTotal: " << sTotal << endl;
-                in.close();
-                // Создать файл
-
-//                string filename = task.product_name_rus() + "__" + to_string(sTotal) + "штук__" + std::string(time_buffer) + ".csv";
-
-                fs::path work_path = save_folder;
-                work_path /= "input";
-                work_path /= std::string(d_m_buffer);
-                qDebug() << "work_path: " << work_path.c_str();
-
-                fs::create_directories(work_path);
-                fs::current_path(work_path);
-                qDebug() << "fs::current_path=" << fs::current_path().c_str();
-
-                std::ofstream template_file;
-
-                template_file.open(filename, std::ios_base::app);
-                if(not template_file.is_open()) {
-                    std::cout<<"Ошибка создания файла шаблона"<<std::endl;
-                    return;
-                }
-                //------------------------Header-----------------------------
-
-                template_file << "ИНН участника оборота,ИНН производителя,ИНН собственника,Дата производства,Тип производственного заказа,Версия" << endl;
-                template_file << position.inn << "," << position.inn << "," << position.inn << "," << date_buffer << ",Собственное производство,4" << endl;
-                template_file << "КИ,КИТУ,Дата производства,Код ТН ВЭД ЕАС товара,Вид документа подтверждающего соответствие,Номер документа подтверждающего соответствие,Дата документа подтверждающего соответствие,Идентификатор ВСД" << endl;
-
-                //------------------------Scans-----------------------------
-
-                //Открыть ки файл. Считывать строку за строкой. Дописывать в результирующий файл
-
-                std::ifstream infile;
-
-                infile.open(ki_name.toStdString(), std::ios_base::app);
-                if(not infile.is_open()) {
-                    std::cout<<"Ошибка открытия ки файла"<<std::endl;
-                    return;
-                }
-
-                //auto lines = std::count(std::istreambuf_iterator<char>(infile),
-                //             std::istreambuf_iterator<char>(), '\n');
-                //
-                //cout << "lines: " << lines << endl;
-
-                std::string scan;
-
-                while (std::getline(infile, scan)) {
-                    char gs = 29;
-                    auto pos = scan.find(gs);
-
-                    scan = scan.substr(0,pos);
-
-                    scan = std::regex_replace(scan, std::regex("\""), "\"\"");
-                    scan.insert(0, 1, '"');
-                    scan.push_back('"');
-
-                    template_file << scan << ","
-                       << ","
-                       << date_buffer << ","
-                       << position.code_tn_ved << ","
-                       << position.document_type << ","
-                       << position.document_number << ","
-                       << position.document_date << ","
-                       << position.vsd;
-
-                    if(--sTotal > 0)
-                        template_file << endl;
-
-                    need_to_delete = true;
-                }
-                }
-                break;
-            default:
-                break;
-            }
-        }
-    }
-*/
-    qDebug() << "tasks.size(): " << tasks.size();
-    qDebug() << "need_to_delete: " << need_to_delete;
-    if(need_to_delete) {
-        qDebug() << "tasks.size(): " << tasks.size();
-        auto it = find_if(tasks.begin(), tasks.end(),[&](auto & task) {return task->line_number == line_number;});
-        tasks.erase(it);
-        qDebug() << "tasks.size(): " << tasks.size();
     }
 }
 
 void MainWindow::on_add_line_pushbutton_clicked() {
     auto line_number = ui->line_number_choose_combobox->currentText().toInt();
     ++task_counter;
-    auto task = make_shared<TaskInfo>(line_number, task_counter, product_names);
+    auto product_name_rus = ui->product_name_for_task_combobox->currentText().toStdString();
+    auto task = make_shared<TaskInfo>(line_number, task_counter, product_names, product_name_rus);
 
     auto inserted_task = tasks.emplace_back(task); // implicitly uint -> uint8_t for line_number
 
     connect(inserted_task->state_button(), &QPushButton::clicked, this, &MainWindow::make_next_action);
+    connect(inserted_task->delete_task_button, &QPushButton::clicked, this, &MainWindow::remove_task);
 
     ui->lines_layout->addLayout(inserted_task->layout());
 }

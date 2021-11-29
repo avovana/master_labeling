@@ -49,10 +49,11 @@ enum class TaskStatus {
 std::ostream& operator<< (std::ostream& os, TaskStatus state);
 
 struct TaskInfo {
-    TaskInfo(uint8_t line_number_, uint8_t task_number_, const map<string, string>& product_names_):
+    TaskInfo(uint8_t line_number_, uint8_t task_number_, const map<string, string>& product_names_, const string& product_name_rus_):
         line_number(line_number_),
         task_number(task_number_),
-        product_names(product_names_)
+        product_names(product_names_),
+        product_name(product_name_rus_)
     {
         qDebug("Task line_number=%d, task_number=%d created INFO", line_number, task_number);
         new_layout = new QHBoxLayout();
@@ -70,13 +71,12 @@ struct TaskInfo {
         line_status_label->setMinimumWidth(90);
         line_status_label->setMaximumWidth(90);
 
-        product_name_combobox = new QComboBox();
-        product_name_combobox->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-        product_name_combobox->setMinimumWidth(400);
-        product_name_combobox->setMaximumWidth(400);
-        product_name_combobox->setStyleSheet("QComboBox{font-size: 20px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
-        for(auto& [name_rus, name_eng] : product_names)
-            product_name_combobox->addItem(QString::fromStdString(name_rus));
+        product_name_label = new QLabel();
+        product_name_label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        product_name_label->setMinimumWidth(400);
+        product_name_label->setMaximumWidth(400);
+        product_name_label->setStyleSheet("QLabel{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
+        product_name_label->setText(QString::fromStdString(product_name));
 
         plan_lineedit = new QLineEdit();
         plan_lineedit->setStyleSheet("QLineEdit{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
@@ -95,14 +95,19 @@ struct TaskInfo {
         line_state_pushbutton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         line_state_pushbutton->setObjectName(QString("%1;%2").arg(line_number).arg(task_number));
 
-//        static int line_position = 2;
-//        line_position++;
+        delete_task_button = new QPushButton();
+        delete_task_button->setIcon(QIcon(":/images/rb.png"));
+        delete_task_button->setStyleSheet("QPushButton{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255); qproperty-iconSize: 24px;}");
+        delete_task_button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        delete_task_button->setObjectName(QString("%1;%2").arg(line_number).arg(task_number));
+
         new_layout->addWidget(line_number_label);
         new_layout->addWidget(line_status_label);
-        new_layout->addWidget(product_name_combobox);
+        new_layout->addWidget(product_name_label);
         new_layout->addWidget(plan_lineedit);
         new_layout->addWidget(current_label);
         new_layout->addWidget(line_state_pushbutton);
+        new_layout->addWidget(delete_task_button);
         new_layout->setAlignment(Qt::AlignLeft);
     }
 
@@ -110,10 +115,11 @@ struct TaskInfo {
         delete new_layout;
         delete line_number_label;
         delete line_status_label;
-        delete product_name_combobox;
+        delete product_name_label;
         delete plan_lineedit;
         delete current_label;
         delete line_state_pushbutton;
+        delete delete_task_button;
         qDebug("Task line_number=%d, task_number=%d removed INFO", line_number, task_number);
     }
 
@@ -126,11 +132,11 @@ struct TaskInfo {
     }
 
     auto product_name_eng() {
-        return product_names[product_name_combobox->currentText().toStdString()];
+        return product_names[product_name];
     }
 
     auto product_name_rus() {
-        return product_name_combobox->currentText().toStdString();
+        return product_name;
     }
 
     auto plan() {
@@ -168,14 +174,16 @@ struct TaskInfo {
     QHBoxLayout *new_layout;
     QLabel *line_number_label;
     QLabel *line_status_label;
-    QComboBox *product_name_combobox;
+    QLabel *product_name_label;
     QLineEdit *plan_lineedit;
     QLineEdit *current_label;
     QPushButton *line_state_pushbutton;
+    QPushButton *delete_task_button;
     const uint8_t task_number;
     uint8_t line_number = 0;
     TaskStatus m_status = TaskStatus::INIT;
     map<string, string> product_names;
+    string product_name;
     string file_name;
 };
 
@@ -274,6 +282,23 @@ private slots:
 
     std::map<std::string, std::string> fill_table();
     void update_xml_with_vsds_from_table();
+
+    void remove_task() {
+        qDebug() << "===============" << __PRETTY_FUNCTION__ << "===============";
+        QPushButton * senderButton = qobject_cast<QPushButton *>(this->sender());
+        auto name = senderButton->objectName();
+
+        auto line_task = name.split(';');
+        uint8_t line_number = line_task[0].toUInt();
+        uint8_t task_number = line_task[1].toUInt();
+
+        auto task_it = std::find_if(begin(tasks), end(tasks),
+                                                [&](auto &task) { return line_number == task->line_number && task_number == task->task_number;});
+
+        qDebug() << "tasks.size(): " << tasks.size();
+        tasks.erase(task_it);
+        qDebug() << "tasks.size(): " << tasks.size();
+    }
 
     LineConnector& create_connector_if_needed(uint line_number, QTcpSocket * socket) {
         auto connector_itr = std::find_if(begin(connectors), end(connectors),

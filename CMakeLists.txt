@@ -19,10 +19,9 @@ add_executable(${PROJECT_NAME}
     mainwindow.cpp
     mainwindow.h
     config.h
-    #mytcpserver.h
-    #mytcpserver.cpp
     mainwindow.ui
     pugixml.cpp
+    rubbish_bin.qrc
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE

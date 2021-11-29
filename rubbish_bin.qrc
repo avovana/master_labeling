@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>rubbish_bin.jpg</file>
+        <file>rb.png</file>
+    </qresource>
+</RCC>
