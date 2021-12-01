@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1074</width>
+    <width>1079</width>
     <height>566</height>
    </rect>
   </property>
@@ -556,7 +556,7 @@ border: 2px solid black;</string>
             <enum>QFrame::WinPanel</enum>
            </property>
            <property name="text">
-            <string>Создать товар для линии</string>
+            <string>Создать производственное задание</string>
            </property>
            <property name="scaledContents">
             <bool>false</bool>
@@ -596,7 +596,7 @@ border: 2px solid black;</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1074</width>
+     <width>1079</width>
      <height>22</height>
     </rect>
    </property>
