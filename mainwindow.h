@@ -277,7 +277,7 @@ private slots:
         std::vector<std::shared_ptr<TaskInfo>> tasks_for_line;
 
         std::copy_if(tasks.begin(), tasks.end(), std::back_inserter(tasks_for_line),
-                                        [&](auto &task) { return line_number == task->line_number;});
+                                        [&](auto &task) { return line_number == task->line_number && task->m_status != TaskStatus::FINISHED;});
 
         return tasks_for_line;
     }
