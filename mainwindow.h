@@ -322,6 +322,8 @@ private slots:
     }
 
 private:
+    void make_template(QString ki_name, std::string product_name);
+
     std::string save_folder;
 
     Ui::MainWindow *ui;
