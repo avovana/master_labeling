@@ -237,19 +237,29 @@ void MainWindow::on_server_read() {
 
             std::vector<string> tasks_info;
 
+            TaskStatus task_status;
+
             for_each(begin(tasks_for_line), end(tasks_for_line),[&](auto & task) {
                 if(task->line_number == line_number) {
                     auto number = task->task_number;
                     auto name = task->product_name_eng();
                     auto plan = task->plan();
                     auto info = QString("%1:%2:%3;").arg(number).arg(QString::fromStdString(name)).arg(plan).toStdString();
-                    task->set_status(TaskStatus::TASK_SEND);
-                    task->state_button()->setText("Задача передана. Разрешить старт");
+                    task_status = task->status();
                     tasks_info.push_back(info);
+                    if(task_status == TaskStatus::IN_PROGRESS) {
+                        task->state_button()->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: grey;}");
+                        task->state_button()->setText("В работе");
+                    } else {
+                        task->set_status(TaskStatus::TASK_SEND);
+                        task->state_button()->setText("Задача передана. Разрешить старт");
+                    }
                 }
             });
 
             connector.send_tasks(tasks_info);
+            if(task_status == TaskStatus::IN_PROGRESS)
+               connector.send_ready();
         }
         break;
 
