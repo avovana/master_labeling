@@ -191,12 +191,16 @@ void MainWindow::on_server_read() {
 
     qDebug() << "bytes_to_read = " << bytes_to_read;
 
-    int attempts = 3;
+    static int attempts = 200;
     if(bytes_to_read > 0) {
         if (!socket->waitForReadyRead(100)) {
             qDebug() << "waiting bytes timed out INFO";
-            if(not attempts--)
+            qDebug() << "attempts: " << attempts;
+            if(not attempts--) {
+                socket->close();
+                qDebug() << "socket closed";
                 return;
+            }
         }
 
         QByteArray read_bytes_chunk = socket->read(bytes_to_read);
