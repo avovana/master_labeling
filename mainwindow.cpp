@@ -191,7 +191,7 @@ void MainWindow::on_server_read() {
 
     qDebug() << "bytes_to_read = " << bytes_to_read;
 
-    static int attempts = 200;
+    static int attempts = 50;
     if(bytes_to_read > 0) {
         if (!socket->waitForReadyRead(100)) {
             qDebug() << "waiting bytes timed out INFO";
@@ -356,6 +356,7 @@ void MainWindow::on_server_read() {
             task->state_button()->setText("Завершено. Сделать шаблон");
             task->state_button()->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: green;}");
             qDebug() << "111";
+            connector.send_file_received();
         }
         break;
     }

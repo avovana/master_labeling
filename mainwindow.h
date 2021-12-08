@@ -249,6 +249,17 @@ struct LineConnector {
        socket->write(out_array);
     }
 
+    void send_file_received() {
+        QByteArray out_array;
+        QDataStream stream(&out_array, QIODevice::WriteOnly);
+        unsigned int out_msg_size = sizeof(unsigned int);
+        unsigned int type = 10;
+        stream << out_msg_size;
+        stream << type;
+
+        socket->write(out_array);
+    }
+
     QTcpSocket* socket = nullptr;
     uint8_t line_number = 0;
 };
