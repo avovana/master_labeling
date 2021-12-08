@@ -68,8 +68,11 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     pugi::xml_node save_folder_child = doc.child("vars").child("save_folder");
+    pugi::xml_node save_remote_vsd_child = doc.child("vars").child("save_remote_vsd");
     save_folder = save_folder_child.text().get();
+    save_remote_vsd = save_remote_vsd_child.text().get();
     cout << "save_folder: " << save_folder << endl;
+    cout << "save_remote_vsd: " << save_remote_vsd << endl;
 
     mTcpServer = new QTcpServer(this);
 
@@ -644,7 +647,7 @@ void MainWindow::update_xml_with_vsds_from_table() {
 
         for (pugi::xml_node position_xml: positions_xml.children("position")) {
             std::string name_in_xml = position_xml.attribute("name").as_string();
-            qDebug() << "   name_in_xml: " << QString::fromStdString(name_in_xml);
+//            qDebug() << "   name_in_xml: " << QString::fromStdString(name_in_xml);
             if(name == name_in_xml) {
                 position_xml.attribute("vsd").set_value(vsd.c_str());
                 qDebug() << "    name: " << QString::fromStdString(name);
@@ -654,9 +657,15 @@ void MainWindow::update_xml_with_vsds_from_table() {
     }
 
     if(not doc.save_file("positions.xml")) {
-        cout << "Update XML ERROR" << endl;
+        cout << "ERROR VSD safe local===============================================" << endl;
         throw std::logic_error("error");
     } else {
-        cout << "Update XML success" << endl;
+        cout << "VSD safe SUCCES local==============================================" << endl;
+    }
+
+    if(not doc.save_file(save_remote_vsd.c_str())) {
+        cout << "ERROR VSD safe remote===============================================" << endl;
+    } else {
+        cout << "VSD safe SUCCES remote==============================================" << endl;
     }
 }

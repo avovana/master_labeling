@@ -335,6 +335,7 @@ private:
     void make_template(QString ki_name, std::string product_name);
 
     std::string save_folder;
+    std::string save_remote_vsd;
 
     Ui::MainWindow *ui;
     QTcpServer * mTcpServer;
