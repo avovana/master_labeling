@@ -277,6 +277,7 @@ public slots:
     void on_client_disconnected();
     void make_next_action();
 private slots:
+    void closeEvent(QCloseEvent *event);
     void on_make_template_pushbutton_clicked();
 
     std::map<std::string, std::string> get_vsds();

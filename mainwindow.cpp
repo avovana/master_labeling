@@ -346,6 +346,7 @@ void MainWindow::on_server_read() {
             QString product_name;
 
             std::string filename = task->product_name_eng() + "__" + scans_number + " __" + time_ts + ".csv";
+            task->current_label->setText(QString::fromStdString(scans_number));
             qDebug() << "filename=" << filename.c_str();
             work_path /= filename;
             qDebug() << "work_path: " << work_path.c_str();
@@ -368,6 +369,24 @@ void MainWindow::on_server_read() {
 void MainWindow::on_client_disconnected() {
     QTcpSocket* socket = qobject_cast< QTcpSocket* >(sender());
     socket->close();
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    auto task_it = std::find_if(begin(tasks), end(tasks), [](auto &task) { return task->status() != TaskStatus::FINISHED;});
+
+    QString msg = "Вы уверены, что хотите выйти?\n";
+    if(task_it != end(tasks))
+
+        msg.append("Существуют не завершенные задачи.");
+
+    QMessageBox::StandardButton resBtn = QMessageBox::question( this, "Завершение", msg,
+                                                                QMessageBox::No | QMessageBox::Yes,
+                                                                QMessageBox::Yes);
+    if (resBtn != QMessageBox::Yes)
+        event->ignore();
+    else
+        event->accept();
 }
 
 MainWindow::~MainWindow() {
