@@ -8,6 +8,7 @@
 
 #include <QBitArray>
 #include <QFileDialog>
+#include <QRegExpValidator>
 
 using namespace std;
 
@@ -58,6 +59,12 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow) {
     ui->setupUi(this);
+
+    ui->date_line_edit->setValidator(new QRegExpValidator(QRegExp("[0-3]{1}[0-9]{1}-[0-1]{1}[1-9]{1}")));
+//    ui->date_make_template_line_edit->setValidator(new QRegExpValidator(QRegExp("[0-3]{1}[0-9]{1}-[0-1]{1}[1-9]{1}")));
+
+    ui->date_line_edit->setText(QString::fromStdString(date_d_m()));
+//    ui->date_make_template_line_edit->setText(QString::fromStdString(date_m_d()));
 
     pugi::xml_document doc;
     if (!doc.load_file("vars.xml")) {
@@ -251,7 +258,8 @@ void MainWindow::on_server_read() {
                     auto number = task->task_number;
                     auto name = task->product_name_eng();
                     auto plan = task->plan();
-                    auto info = QString("%1:%2:%3;").arg(number).arg(QString::fromStdString(name)).arg(plan).toStdString();
+                    auto date = task->date;
+                    auto info = QString("%1:%2:%3:%4;").arg(number).arg(QString::fromStdString(name)).arg(plan).arg(QString::fromStdString(date)).toStdString();
                     task_status = task->status();
                     tasks_info.push_back(info);
                     if(task_status == TaskStatus::IN_PROGRESS) {
@@ -264,9 +272,15 @@ void MainWindow::on_server_read() {
                 }
             });
 
+            if(not tasks_info.empty())
+                tasks_info.back().pop_back(); // rm last ;
+
             connector.send_tasks(tasks_info);
-            if(task_status == TaskStatus::IN_PROGRESS)
-               connector.send_ready();
+            for_each(begin(tasks_for_line), end(tasks_for_line),[&](auto & task) {
+                if(task->line_number == line_number)
+                    if(task_status == TaskStatus::IN_PROGRESS)
+                       connector.send_ready(task->task_number);
+            });
         }
         break;
 
@@ -316,25 +330,9 @@ void MainWindow::on_server_read() {
             if(pos != -1)
                 scans.truncate(pos);
 
-            time_t rawtime;
-            struct tm * timeinfo;
-            char date_buffer[80];
-            char time_buffer [80];
-
-            time (&rawtime);
-            timeinfo = localtime(&rawtime);
-
-            strftime(date_buffer, sizeof(date_buffer), "%d-%m", timeinfo);
-            strftime(time_buffer, sizeof(time_buffer), "%H-%M", timeinfo);
-
-            std::string date(date_buffer);
-            std::string time_ts(time_buffer);
-            qDebug() << "date=" << date.c_str();
-            qDebug() << "time_ts=" << time_ts.c_str();
-
             fs::path work_path = save_folder;
             work_path /= "ki";
-            work_path /= std::string(date_buffer);
+            work_path /= task->date;
             qDebug() << "work_path: " << work_path.c_str();
             qDebug() << "work_path: " << QString::fromStdString(work_path.string());
             fs::create_directories(work_path);
@@ -345,7 +343,7 @@ void MainWindow::on_server_read() {
 
             QString product_name;
 
-            std::string filename = task->product_name_eng() + "__" + scans_number + " __" + time_ts + ".csv";
+            std::string filename = task->product_name_eng() + "__" + scans_number + " __" + time_h_m() + ".csv";
             task->current_label->setText(QString::fromStdString(scans_number));
             qDebug() << "filename=" << filename.c_str();
             work_path /= filename;
@@ -398,6 +396,7 @@ void MainWindow::on_make_template_pushbutton_clicked() {
     QString ki_name = QFileDialog::getOpenFileName(this, "Ki", QString::fromStdString(save_folder));
     qDebug() << "Filename ki: " << ki_name;
     string product_name = product_names[ui->product_name_combobox->currentText().toStdString()];
+//    string date = ui->date_make_template_line_edit->text().toStdString();
 
     make_template(ki_name, product_name);
 }
@@ -438,7 +437,7 @@ void MainWindow::make_next_action() {
     case TaskStatus::TASK_SEND:
         task->state_button()->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: grey;}");
         task->state_button()->setText("В работе");
-        connector_itr->send_ready();
+        connector_itr->send_ready(task->task_number);
         task->set_status(TaskStatus::IN_PROGRESS);
         break;
     case TaskStatus::FINISHED:
@@ -461,7 +460,8 @@ void MainWindow::on_add_line_pushbutton_clicked() {
     auto line_number = ui->line_number_choose_combobox->currentText().toInt();
     ++task_counter;
     auto product_name_rus = ui->product_name_for_task_combobox->currentText().toStdString();
-    auto task = make_shared<TaskInfo>(line_number, task_counter, product_names, product_name_rus);
+    auto date = ui->date_line_edit->text().toStdString();
+    auto task = make_shared<TaskInfo>(line_number, task_counter, product_names, product_name_rus, date);
 
     auto inserted_task = tasks.emplace_back(task); // implicitly uint -> uint8_t for line_number
 
@@ -548,19 +548,6 @@ void MainWindow::make_template(QString ki_name, std::string product_name) {
     }
     //------------------------Make file-----------------------------
 
-    std::string date_pattern = std::string("%Y-%m-%d");
-    std::string d_m_pattern = std::string("%d-%m");
-    std::string time_pattern = std::string("%H-%M");
-    char date_buffer [80];
-    char d_m_buffer [80];
-    char time_buffer [80];
-
-    time_t t = time(0);
-    struct tm * now = localtime( & t );
-    strftime (date_buffer,80,date_pattern.c_str(),now);
-    strftime (time_buffer,80,time_pattern.c_str(),now);
-    strftime (d_m_buffer,80,d_m_pattern.c_str(),now);
-
     // Подсчитать кол-во сканов
     string s;
     int sTotal = 0;
@@ -574,11 +561,11 @@ void MainWindow::make_template(QString ki_name, std::string product_name) {
     in.close();
     // Создать файл
 
-    string filename = product_name + "__" + to_string(sTotal) + "__" + std::string(time_buffer) + ".csv";
+    string filename = product_name + "__" + to_string(sTotal) + "__" + time_h_m() + ".csv";
 
     fs::path work_path = save_folder;
     work_path /= "input";
-    work_path /= std::string(d_m_buffer);
+    work_path /= date_d_m();
     qDebug() << "work_path: " << work_path.c_str();
 
     fs::create_directories(work_path);
@@ -595,7 +582,7 @@ void MainWindow::make_template(QString ki_name, std::string product_name) {
     //------------------------Header-----------------------------
 
     template_file << "ИНН участника оборота,ИНН производителя,ИНН собственника,Дата производства,Тип производственного заказа,Версия" << endl;
-    template_file << position.inn << "," << position.inn << "," << position.inn << "," << date_buffer << ",Собственное производство,4" << endl;
+    template_file << position.inn << "," << position.inn << "," << position.inn << "," << date_y_m_d() << ",Собственное производство,4" << endl;
     template_file << "КИ,КИТУ,Дата производства,Код ТН ВЭД ЕАС товара,Вид документа подтверждающего соответствие,Номер документа подтверждающего соответствие,Дата документа подтверждающего соответствие,Идентификатор ВСД" << endl;
 
     //------------------------Scans-----------------------------
@@ -624,7 +611,7 @@ void MainWindow::make_template(QString ki_name, std::string product_name) {
 
         template_file << scan << ","
            << ","
-           << date_buffer << ","
+           << date_y_m_d() << ","
            << position.code_tn_ved << ","
            << position.document_type << ","
            << position.document_number << ","

@@ -49,11 +49,16 @@ enum class TaskStatus {
 std::ostream& operator<< (std::ostream& os, TaskStatus state);
 
 struct TaskInfo {
-    TaskInfo(uint8_t line_number_, uint8_t task_number_, const map<string, string>& product_names_, const string& product_name_rus_):
+    TaskInfo(uint8_t line_number_,
+             uint8_t task_number_,
+             const map<string, string>& product_names_,
+             const string& product_name_rus_,
+             const string& date_):
         line_number(line_number_),
         task_number(task_number_),
         product_names(product_names_),
-        product_name(product_name_rus_)
+        product_name(product_name_rus_),
+        date(date_)
     {
         qDebug("Task line_number=%d, task_number=%d created INFO", line_number, task_number);
         new_layout = new QHBoxLayout();
@@ -77,6 +82,14 @@ struct TaskInfo {
         product_name_label->setMaximumWidth(400);
         product_name_label->setStyleSheet("QLabel{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
         product_name_label->setText(QString::fromStdString(product_name));
+
+
+        date_label = new QLabel();
+        date_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        date_label->setMinimumWidth(100);
+        date_label->setMaximumWidth(100);
+        date_label->setStyleSheet("QLabel{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
+        date_label->setText(QString::fromStdString(date));
 
         plan_lineedit = new QLineEdit();
         plan_lineedit->setStyleSheet("QLineEdit{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
@@ -105,6 +118,7 @@ struct TaskInfo {
         new_layout->addWidget(line_number_label);
         new_layout->addWidget(line_status_label);
         new_layout->addWidget(product_name_label);
+        new_layout->addWidget(date_label);
         new_layout->addWidget(plan_lineedit);
         new_layout->addWidget(current_label);
         new_layout->addWidget(line_state_pushbutton);
@@ -117,6 +131,7 @@ struct TaskInfo {
         delete line_number_label;
         delete line_status_label;
         delete product_name_label;
+        delete date_label;
         delete plan_lineedit;
         delete current_label;
         delete line_state_pushbutton;
@@ -176,6 +191,7 @@ struct TaskInfo {
     QLabel *line_number_label;
     QLabel *line_status_label;
     QLabel *product_name_label;
+    QLabel *date_label;
     QLineEdit *plan_lineedit;
     QLineEdit *current_label;
     QPushButton *line_state_pushbutton;
@@ -186,6 +202,7 @@ struct TaskInfo {
     map<string, string> product_names;
     string product_name;
     string file_name;
+    string date;
 };
 
 struct LineConnector {
@@ -236,15 +253,21 @@ struct LineConnector {
         }
     }
 
-    void send_ready() {
+    void send_ready(const uint8_t task_number) {
+        qDebug() << "__send_ready__";
         QByteArray out_array;
         QDataStream stream(&out_array, QIODevice::WriteOnly);
-        unsigned int out_msg_size = sizeof(unsigned int);
+        unsigned int out_msg_size = 2 * sizeof(unsigned int);
         unsigned int type = 6;
+        unsigned int task_number_int = task_number;
         stream << out_msg_size;
         stream << type;
+        stream << task_number_int;
 
-        qDebug() << " on pushbutton_clicked size: " << out_array.size();
+        qDebug() << " sizeof(unsigned int):  " << sizeof(unsigned int);
+        qDebug() << " sizeof(const uint8_t): " << sizeof(const uint8_t);
+
+        qDebug() << " size: "  << out_array.size();
 
        socket->write(out_array);
     }
@@ -333,6 +356,43 @@ private slots:
     }
 
 private:
+    std::string date_d_m() {
+        time_t rawtime;
+        struct tm * timeinfo;
+        char date_buffer[80];
+
+        time (&rawtime);
+        timeinfo = localtime(&rawtime);
+
+        strftime(date_buffer, sizeof(date_buffer), "%d-%m", timeinfo);
+
+        return date_buffer;
+    }
+
+    std::string date_y_m_d() {
+        std::string year_pattern = std::string("%Y-%m-%d");
+        char year_buffer [80];
+
+        time_t t = time(0);
+        struct tm * now = localtime( & t );
+        strftime (year_buffer,80,year_pattern.c_str(),now);
+
+        return year_buffer;
+    }
+
+    std::string time_h_m() {
+        time_t rawtime;
+        struct tm * timeinfo;
+        char time_buffer [80];
+
+        time (&rawtime);
+        timeinfo = localtime(&rawtime);
+
+        strftime(time_buffer, sizeof(time_buffer), "%H-%M", timeinfo);
+
+        return time_buffer;
+    }
+
     void make_template(QString ki_name, std::string product_name);
 
     std::string save_folder;
