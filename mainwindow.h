@@ -60,6 +60,7 @@ struct TaskInfo {
         product_name(product_name_rus_),
         date(date_)
     {
+//        m_status = TaskStatus::IN_PROGRESS;
         qDebug("Task line_number=%d, task_number=%d created INFO", line_number, task_number);
         new_layout = new QHBoxLayout();
         line_number_label = new QLabel();
@@ -169,6 +170,10 @@ struct TaskInfo {
         case TaskStatus::INIT:
             ;
             break;
+        case TaskStatus::IN_PROGRESS:
+            line_state_pushbutton->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: grey;}");
+            line_state_pushbutton->setText("В работе");
+            break;
         case TaskStatus::TASK_SEND:
             line_status_label->setStyleSheet("QLabel{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: green;}");
             break;
@@ -239,12 +244,12 @@ struct LineConnector {
             stream << type;
             stream.writeRawData(msg.c_str(), msg.size());
 
-            for(int i = 0; i < out_array.count(); ++i)
-              qDebug() << out_array.count() << QString::number(out_array[i], 16);
+//            for(int i = 0; i < out_array.count(); ++i)
+//              qDebug() << out_array.count() << QString::number(out_array[i], 16);
 
-            qDebug() << "out_array=" << out_array;
-            for(int i = 0; i < out_array.count(); ++i)
-              qDebug() << "out_array[" << i << "] " << out_array[i];
+//            qDebug() << "out_array=" << out_array;
+//            for(int i = 0; i < out_array.count(); ++i)
+//              qDebug() << "out_array[" << i << "] " << out_array[i];
 
             qDebug() << "out_array_size=" << out_array.size();
 
@@ -342,7 +347,7 @@ private slots:
 
         if(connector_itr == end(connectors)) {
             connectors.emplace_back(socket, line_number);
-            qDebug() << "connector_itr == end(connectors) " << socket << " " << &*socket;
+//            qDebug() << "connector_itr == end(connectors) " << socket << " " << &*socket;
 
             return connectors.back();
         }

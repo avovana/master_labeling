@@ -236,12 +236,12 @@ void MainWindow::on_server_read() {
 
     qDebug() << "msg_type = " << msg_type << " line_number = " << line_number << " task_number = " << task_number << " INFO";
 
-    qDebug() << "receive method socket " << socket;
-    qDebug() << "receive method socket " << &*socket;
+//    qDebug() << "receive method socket " << socket;
+//    qDebug() << "receive method socket " << &*socket;
     auto& connector = create_connector_if_needed(line_number, socket);
-    qDebug() << "connector " << &connector;
-    bool res = connector.socket == nullptr;
-    qDebug() << "here " << res ;
+//    qDebug() << "connector " << &connector;
+//    bool res = connector.socket == nullptr;
+//    qDebug() << "here " << res ;
 
     switch(msg_type) {
         case 1:
@@ -254,33 +254,33 @@ void MainWindow::on_server_read() {
             TaskStatus task_status;
 
             for_each(begin(tasks_for_line), end(tasks_for_line),[&](auto & task) {
-                if(task->line_number == line_number) {
-                    auto number = task->task_number;
-                    auto name = task->product_name_eng();
-                    auto plan = task->plan();
-                    auto date = task->date;
-                    auto info = QString("%1:%2:%3:%4;").arg(number).arg(QString::fromStdString(name)).arg(plan).arg(QString::fromStdString(date)).toStdString();
-                    task_status = task->status();
-                    tasks_info.push_back(info);
-                    if(task_status == TaskStatus::IN_PROGRESS) {
-                        task->state_button()->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: grey;}");
-                        task->state_button()->setText("В работе");
-                    } else {
-                        task->set_status(TaskStatus::TASK_SEND);
-                        task->state_button()->setText("Задача передана. Разрешить старт");
-                    }
+//                if(task->line_number == line_number) {
+                auto number = task->task_number;
+                auto name = task->product_name_eng();
+                auto plan = task->plan();
+                auto date = task->date;
+                auto info = QString("%1:%2:%3:%4;").arg(number).arg(QString::fromStdString(name)).arg(plan).arg(QString::fromStdString(date)).toStdString();
+                task_status = task->status();
+                tasks_info.push_back(info);
+                if(task_status == TaskStatus::IN_PROGRESS) {
+                    task->state_button()->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: grey;}");
+                    task->state_button()->setText("В работе");
+                } else {
+                    task->set_status(TaskStatus::TASK_SEND);
+                    task->state_button()->setText("Задача передана");
                 }
+//                }
             });
 
             if(not tasks_info.empty())
                 tasks_info.back().pop_back(); // rm last ;
 
             connector.send_tasks(tasks_info);
-            for_each(begin(tasks_for_line), end(tasks_for_line),[&](auto & task) {
-                if(task->line_number == line_number)
-                    if(task_status == TaskStatus::IN_PROGRESS)
-                       connector.send_ready(task->task_number);
-            });
+//            for_each(begin(tasks_for_line), end(tasks_for_line),[&](auto & task) {
+//                if(task->line_number == line_number)
+//                    if(task_status == TaskStatus::IN_PROGRESS)
+//                       connector.send_ready(task->task_number);
+//            });
         }
         break;
 
@@ -333,13 +333,13 @@ void MainWindow::on_server_read() {
             fs::path work_path = save_folder;
             work_path /= "ki";
             work_path /= task->date;
-            qDebug() << "work_path: " << work_path.c_str();
-            qDebug() << "work_path: " << QString::fromStdString(work_path.string());
+//            qDebug() << "work_path: " << work_path.c_str();
+//            qDebug() << "work_path: " << QString::fromStdString(work_path.string());
             fs::create_directories(work_path);
             fs::current_path(work_path);
             string scans_number = to_string(scans.count(QChar('\n')) + 1);
             qDebug() << "scans_number=" << scans_number.c_str();
-            qDebug() << "fs::current_path=" << fs::current_path().c_str();
+//            qDebug() << "fs::current_path=" << fs::current_path().c_str();
 
             QString product_name;
 
@@ -347,7 +347,7 @@ void MainWindow::on_server_read() {
             task->current_label->setText(QString::fromStdString(scans_number));
             qDebug() << "filename=" << filename.c_str();
             work_path /= filename;
-            qDebug() << "work_path: " << work_path.c_str();
+//            qDebug() << "work_path: " << work_path.c_str();
             task->file_name = work_path.string();
             std::ofstream out(work_path.string());
             out << scans.toStdString();
@@ -357,8 +357,20 @@ void MainWindow::on_server_read() {
             task->set_status(TaskStatus::FINISHED);
             task->state_button()->setText("Завершено. Сделать шаблон");
             task->state_button()->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: green;}");
-            qDebug() << "111";
+//            qDebug() << "111";
             connector.send_file_received();
+        }
+        break;
+        case 4:
+        {
+            qDebug() << "--------Task started--------";
+            const auto & tasks_for_line = get_tasks_for_line(line_number);
+
+            for_each(begin(tasks_for_line), end(tasks_for_line),[&](auto & task) {
+                if(task_number == task->task_number) {
+                    task->set_status(TaskStatus::IN_PROGRESS);
+                }
+            });
         }
         break;
     }
@@ -415,7 +427,7 @@ void MainWindow::make_next_action() {
     auto connector_itr = std::find_if(begin(connectors), end(connectors),
                                     [&line_number](auto connector) { return line_number == connector.line_number;});
 
-    qDebug() << "connector_itr: " << &connector_itr;
+//    qDebug() << "connector_itr: " << &connector_itr;
     if(connector_itr == end(connectors)) {
         qDebug() << "Connection wasn't established ERROR";
         return;
@@ -432,14 +444,14 @@ void MainWindow::make_next_action() {
     auto & task = *task_it;
 
     switch (task->status()) {
-    case TaskStatus::INIT:
-        break;
-    case TaskStatus::TASK_SEND:
-        task->state_button()->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: grey;}");
-        task->state_button()->setText("В работе");
-        connector_itr->send_ready(task->task_number);
-        task->set_status(TaskStatus::IN_PROGRESS);
-        break;
+//    case TaskStatus::INIT:
+//        break;
+//    case TaskStatus::TASK_SEND:
+//        task->state_button()->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: grey;}");
+//        task->state_button()->setText("В работе");
+//        connector_itr->send_ready(task->task_number);
+//        task->set_status(TaskStatus::IN_PROGRESS);
+//        break;
     case TaskStatus::FINISHED:
         {
         //------------------------File choose-----------------------------
