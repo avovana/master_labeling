@@ -201,7 +201,7 @@ void MainWindow::on_server_read() {
 
     qDebug() << "bytes_to_read = " << bytes_to_read;
 
-    static int attempts = 50;
+    int attempts = 50;
     if(bytes_to_read > 0) {
         if (!socket->waitForReadyRead(100)) {
             qDebug() << "waiting bytes timed out INFO";
@@ -318,6 +318,9 @@ void MainWindow::on_server_read() {
             }
 
             auto & task = *task_it;
+
+            if(task->status() == TaskStatus::FINISHED)
+                qDebug() << "Task FINISHED already! ERROR";
 
             QByteArray buffer(body_size, Qt::Uninitialized);
 

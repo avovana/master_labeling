@@ -344,7 +344,7 @@ border: 2px solid black;</string>
            </property>
           </widget>
          </item>
-         <item row="1" column="2">
+         <item row="1" column="1">
           <widget class="QPushButton" name="make_template_pushbutton">
            <property name="minimumSize">
             <size>
@@ -399,18 +399,6 @@ border: 2px solid black;</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QLineEdit" name="date_make_template_line_edit">
-           <property name="font">
-            <font>
-             <pointsize>14</pointsize>
-            </font>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">background-color: rgb(237, 212, 0);</string>
            </property>
           </widget>
          </item>
