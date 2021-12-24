@@ -1,5 +1,5 @@
 # master_labeling
-- Communicate with slave controllers
+- Communicate with [slave controllers](https://github.com/avovana/slave_controller)
 - Make tasks for them dynamically
 - Observe slaves state
 - Get scans
