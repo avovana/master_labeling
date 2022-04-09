@@ -316,6 +316,7 @@ public slots:
     void on_server_read();
     void on_client_disconnected();
     void make_next_action();
+    void on_copy_button_clicked();
 private slots:
     void closeEvent(QCloseEvent *event);
     void on_make_template_pushbutton_clicked();

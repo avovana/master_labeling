@@ -124,13 +124,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     if(company_name == std::string("ООО \"ИМПЕРИЯ СОКОВ\"")) {
         //ui->groupBox->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-        ui->create_line_label->setStyleSheet("QLabel{font-size: 14px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        ui->create_line_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
         //ui->product_name_for_task_combobox->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
         ui->product_name_for_task_combobox->setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
         ui->date_line_edit->setStyleSheet("QLineEdit{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
         ui->line_number_choose_combobox->setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
         ui->add_line_pushbutton->setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-        ui->create_template_label->setStyleSheet("QLabel{font-size: 14px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        ui->create_template_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
         ui->product_name_combobox->setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
         ui->make_template_pushbutton->setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
         ui->line_number_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
@@ -139,6 +139,7 @@ MainWindow::MainWindow(QWidget *parent)
         ui->date_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
         ui->plan_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
         ui->current_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        ui->copy_button->setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
     }
 
     auto rus_eng_names = fill_table();
@@ -736,4 +737,26 @@ void MainWindow::update_xml_with_vsds_from_table() {
     } else {
         cout << "VSD safe SUCCES remote==============================================" << endl;
     }
+}
+
+void MainWindow::on_copy_button_clicked()
+{
+    QString ki_name = QFileDialog::getOpenFileName(this, "Ki", QString::fromStdString(save_folder));
+    qDebug() << "Filename ki: " << ki_name;
+    string product_name = product_names[ui->product_name_combobox->currentText().toStdString()];
+
+    QString dbase_str;
+
+    QFile file(ki_name);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            QTextStream stream(&file);
+            while (!stream.atEnd()){
+                dbase_str += stream.readLine()+"\n";
+            }
+    }
+
+//    qDebug() << dbase_str;
+
+    QClipboard* c = QApplication::clipboard();
+    c->setText(dbase_str);
 }
