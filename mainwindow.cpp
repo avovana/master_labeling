@@ -76,10 +76,18 @@ MainWindow::MainWindow(QWidget *parent)
 
     pugi::xml_node save_folder_child = doc.child("vars").child("save_folder");
     pugi::xml_node save_remote_vsd_child = doc.child("vars").child("save_remote_vsd");
+    pugi::xml_node need_vsd_child = doc.child("vars").child("need_vsd");
+    pugi::xml_node company_name_child = doc.child("vars").child("company_name");
+    company_name = company_name_child.text().get();
     save_folder = save_folder_child.text().get();
     save_remote_vsd = save_remote_vsd_child.text().get();
+    std::string need_vsd_str = need_vsd_child.text().get();
+    cout << "company_name: " << company_name << endl;
+    cout << "need_vsd_str: " << need_vsd_str << endl;
+    need_vsd = need_vsd_str == "no" ? false : true;
     cout << "save_folder: " << save_folder << endl;
     cout << "save_remote_vsd: " << save_remote_vsd << endl;
+    cout << "need_vsd: " << need_vsd << endl;
 
     mTcpServer = new QTcpServer(this);
 
@@ -94,8 +102,13 @@ MainWindow::MainWindow(QWidget *parent)
     QStringList headers;
     headers << trUtf8("Продукция")
             << trUtf8("ВСД");
-
     ui->table->show();
+    //ui->company_label->setStyleSheet("QLabel { background-color : red; color : blue; }");
+    ui->company_label->setText(company_name.c_str());
+    ui->company_label->setStyleSheet("QLabel{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+    std::string sss = "НПП СИСТЕМА\nпромышленная автоматизация +79962009007";
+    ui->dev_company_label->setText(sss.c_str());
+    ui->dev_company_label->setStyleSheet("QLabel{font-size: 22px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
     ui->table->setColumnCount(2); // Указываем число колонок
     ui->table->setShowGrid(true); // Включаем сетку
     // Разрешаем выделение только одного элемента
@@ -109,6 +122,25 @@ MainWindow::MainWindow(QWidget *parent)
     // Скрываем колонку под номером 0
     //ui->tableWidget->hideColumn(0);
 
+    if(company_name == std::string("ООО \"ИМПЕРИЯ СОКОВ\"")) {
+        //ui->groupBox->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        ui->create_line_label->setStyleSheet("QLabel{font-size: 14px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        //ui->product_name_for_task_combobox->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        ui->product_name_for_task_combobox->setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        ui->date_line_edit->setStyleSheet("QLineEdit{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        ui->line_number_choose_combobox->setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        ui->add_line_pushbutton->setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        ui->create_template_label->setStyleSheet("QLabel{font-size: 14px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        ui->product_name_combobox->setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        ui->make_template_pushbutton->setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        ui->line_number_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        ui->scaner_status_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        ui->product_name_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        ui->date_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        ui->plan_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        ui->current_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+    }
+
     auto rus_eng_names = fill_table();
 
     QStringList items;
@@ -119,6 +151,14 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->product_name_combobox->addItems(items);
     ui->product_name_for_task_combobox->addItems(items);
+
+//    ui->product_name_for_task_combobox->setStyleSheet("QLabel{background-color: rgb(158, 99, 118);}");
+    if(not need_vsd) {
+        ui->table->hide();
+        ui->save_vsd_button->hide();
+    } else {
+        ui->verticalSpacer->changeSize(1,1);
+    }
 }
 
 map<std::string, std::string>  MainWindow::fill_table() {
@@ -152,14 +192,17 @@ map<std::string, std::string>  MainWindow::fill_table() {
         qDebug() << position_xml.attribute("name").as_string();
         qDebug() << position_xml.attribute("vsd").as_string();
 
-        ui->table->insertRow(row);
-        ui->table->setItem(row,0, new QTableWidgetItem(QString::fromStdString(name_rus)));
-        ui->table->setItem(row,1, new QTableWidgetItem(QString::fromStdString(vsd)));
+        if(need_vsd) {
+            ui->table->insertRow(row);
+            ui->table->setItem(row,0, new QTableWidgetItem(QString::fromStdString(name_rus)));
+            ui->table->setItem(row,1, new QTableWidgetItem(QString::fromStdString(vsd)));
+        }
 
         rus_eng_names.emplace(name_rus, name_eng);
     }
 
-    ui->table->resizeColumnsToContents();
+    if(need_vsd)
+        ui->table->resizeColumnsToContents();
 
     return rus_eng_names;
 }
@@ -476,7 +519,7 @@ void MainWindow::on_add_line_pushbutton_clicked() {
     ++task_counter;
     auto product_name_rus = ui->product_name_for_task_combobox->currentText().toStdString();
     auto date = ui->date_line_edit->text().toStdString();
-    auto task = make_shared<TaskInfo>(line_number, task_counter, product_names, product_name_rus, date);
+    auto task = make_shared<TaskInfo>(line_number, task_counter, product_names, product_name_rus, date, company_name);
 
     auto inserted_task = tasks.emplace_back(task); // implicitly uint -> uint8_t for line_number
 
@@ -598,8 +641,10 @@ void MainWindow::make_template(QString ki_name, std::string product_name) {
 
     template_file << "ИНН участника оборота,ИНН производителя,ИНН собственника,Дата производства,Тип производственного заказа,Версия" << endl;
     template_file << position.inn << "," << position.inn << "," << position.inn << "," << date_y_m_d() << ",Собственное производство,4" << endl;
-    template_file << "КИ,КИТУ,Дата производства,Код ТН ВЭД ЕАС товара,Вид документа подтверждающего соответствие,Номер документа подтверждающего соответствие,Дата документа подтверждающего соответствие,Идентификатор ВСД" << endl;
-
+    if(need_vsd)
+        template_file << "КИ,КИТУ,Дата производства,Код ТН ВЭД ЕАС товара,Вид документа подтверждающего соответствие,Номер документа подтверждающего соответствие,Дата документа подтверждающего соответствие,Идентификатор ВСД" << endl;
+    else
+        template_file << "КИ,КИТУ,Дата производства,Код ТН ВЭД ЕАС товара,Вид документа подтверждающего соответствие,Номер документа подтверждающего соответствие,Дата документа подтверждающего соответствие" << endl;
     //------------------------Scans-----------------------------
 
     //Открыть ки файл. Считывать строку за строкой. Дописывать в результирующий файл
@@ -630,8 +675,10 @@ void MainWindow::make_template(QString ki_name, std::string product_name) {
            << position.code_tn_ved << ","
            << position.document_type << ","
            << position.document_number << ","
-           << position.document_date << ","
-           << position.vsd;
+           << position.document_date;
+
+        if(need_vsd)
+            template_file << "," << position.vsd;
 
         if(--sTotal > 0)
             template_file << endl;

@@ -53,7 +53,8 @@ struct TaskInfo {
              uint8_t task_number_,
              const map<string, string>& product_names_,
              const string& product_name_rus_,
-             const string& date_):
+             const string& date_,
+             std::string & company_name):
         line_number(line_number_),
         task_number(task_number_),
         product_names(product_names_),
@@ -125,6 +126,17 @@ struct TaskInfo {
         new_layout->addWidget(line_state_pushbutton);
         new_layout->addWidget(delete_task_button);
         new_layout->setAlignment(Qt::AlignLeft);
+
+        if(company_name == std::string("ООО \"ИМПЕРИЯ СОКОВ\"")) {
+            line_number_label->setStyleSheet("QLabel{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+            line_status_label->setStyleSheet("QLabel{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+            product_name_label->setStyleSheet("QLabel{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+            date_label->setStyleSheet("QLabel{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+            plan_lineedit->setStyleSheet("QLineEdit{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+            current_label->setStyleSheet("QLineEdit{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+            line_state_pushbutton->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+            delete_task_button->setStyleSheet("QPushButton{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118); qproperty-iconSize: 24px;}");
+        }
     }
 
     ~TaskInfo() {
@@ -400,8 +412,10 @@ private:
 
     void make_template(QString ki_name, std::string product_name);
 
+    std::string company_name;
     std::string save_folder;
     std::string save_remote_vsd;
+    bool need_vsd = true;
 
     Ui::MainWindow *ui;
     QTcpServer * mTcpServer;
