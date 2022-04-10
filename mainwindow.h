@@ -128,14 +128,14 @@ struct TaskInfo {
         new_layout->setAlignment(Qt::AlignLeft);
 
         if(company_name == std::string("ООО \"ИМПЕРИЯ СОКОВ\"")) {
-            line_number_label->setStyleSheet("QLabel{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-            line_status_label->setStyleSheet("QLabel{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-            product_name_label->setStyleSheet("QLabel{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-            date_label->setStyleSheet("QLabel{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-            plan_lineedit->setStyleSheet("QLineEdit{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-            current_label->setStyleSheet("QLineEdit{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-            line_state_pushbutton->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-            delete_task_button->setStyleSheet("QPushButton{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118); qproperty-iconSize: 24px;}");
+            line_number_label->setStyleSheet("QLabel{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+            line_status_label->setStyleSheet("QLabel{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+            product_name_label->setStyleSheet("QLabel{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+            date_label->setStyleSheet("QLabel{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+            plan_lineedit->setStyleSheet("QLineEdit{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+            current_label->setStyleSheet("QLineEdit{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+            line_state_pushbutton->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+            delete_task_button->setStyleSheet("QPushButton{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118); qproperty-iconSize: 24px;}");
         }
     }
 
@@ -187,7 +187,7 @@ struct TaskInfo {
             line_state_pushbutton->setText("В работе");
             break;
         case TaskStatus::TASK_SEND:
-            line_status_label->setStyleSheet("QLabel{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: green;}");
+            line_status_label->setStyleSheet("QLabel{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(66, 193, 152);}");
             break;
         case TaskStatus::FINISHED:
             line_state_pushbutton->setStyleSheet("QPushButton{font-size: 60px;font-family: Arial;color: rgb(255, 255, 255);background-color: red;}");

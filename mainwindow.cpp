@@ -123,23 +123,23 @@ MainWindow::MainWindow(QWidget *parent)
     //ui->tableWidget->hideColumn(0);
 
     if(company_name == std::string("ООО \"ИМПЕРИЯ СОКОВ\"")) {
-        //ui->groupBox->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-        ui->create_line_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-        //ui->product_name_for_task_combobox->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-        ui->product_name_for_task_combobox->setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-        ui->date_line_edit->setStyleSheet("QLineEdit{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-        ui->line_number_choose_combobox->setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-        ui->add_line_pushbutton->setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-        ui->create_template_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-        ui->product_name_combobox->setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-        ui->make_template_pushbutton->setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-        ui->line_number_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-        ui->scaner_status_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-        ui->product_name_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-        ui->date_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-        ui->plan_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-        ui->current_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
-        ui->copy_button->setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(108, 99, 118);}");
+        //ui->groupBox->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+        ui->create_line_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+        //ui->product_name_for_task_combobox->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+        ui->product_name_for_task_combobox->setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+        ui->date_line_edit->setStyleSheet("QLineEdit{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+        ui->line_number_choose_combobox->setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+        ui->add_line_pushbutton->setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+        ui->create_template_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+        ui->product_name_combobox->setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+        ui->make_template_pushbutton->setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+        ui->line_number_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+        ui->scaner_status_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+        ui->product_name_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+        ui->date_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+        ui->plan_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+        ui->current_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+        ui->copy_button->setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
     }
 
     auto rus_eng_names = fill_table();
