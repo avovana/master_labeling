@@ -411,8 +411,9 @@ private:
         return time_buffer;
     }
 
-    void make_template(QString ki_name, std::string product_name);
+    void make_template(QString ki_name, std::string product_name, int start_scan = 0);
 
+    int max_scans_for_template;
     std::string company_name;
     std::string save_folder;
     std::string save_remote_vsd;

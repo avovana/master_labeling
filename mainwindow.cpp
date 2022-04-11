@@ -78,10 +78,13 @@ MainWindow::MainWindow(QWidget *parent)
     pugi::xml_node save_remote_vsd_child = doc.child("vars").child("save_remote_vsd");
     pugi::xml_node need_vsd_child = doc.child("vars").child("need_vsd");
     pugi::xml_node company_name_child = doc.child("vars").child("company_name");
+    pugi::xml_node max_scans_for_template_child = doc.child("vars").child("max_scans_for_template");
+    max_scans_for_template = max_scans_for_template_child.text().as_int(2500) ;
     company_name = company_name_child.text().get();
     save_folder = save_folder_child.text().get();
     save_remote_vsd = save_remote_vsd_child.text().get();
     std::string need_vsd_str = need_vsd_child.text().get();
+    cout << "max_scans_for_template: " << max_scans_for_template << endl;
     cout << "company_name: " << company_name << endl;
     cout << "need_vsd_str: " << need_vsd_str << endl;
     need_vsd = need_vsd_str == "no" ? false : true;
@@ -552,7 +555,7 @@ map<string, string> MainWindow::get_vsds() {
     return vsds;
 }
 
-void MainWindow::make_template(QString ki_name, std::string product_name) {
+void MainWindow::make_template(QString ki_name, std::string product_name, int start_scan) {
     qDebug() << "Filename ki: " << ki_name;
     qDebug() << "product_name: " << QString::fromStdString(product_name);
     if(ki_name.isEmpty())
@@ -609,18 +612,30 @@ void MainWindow::make_template(QString ki_name, std::string product_name) {
 
     // Подсчитать кол-во сканов
     string s;
-    int sTotal = 0;
+    int scans_to_make_template = 0;
 
     std::ifstream in(ki_name.toStdString());
 
-    sTotal = std::count(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>(), '\n') + 1;
-    qDebug() << "sTotal=" << sTotal;
-
-    cout << "sTotal: " << sTotal << endl;
+    int scans_overall_to_proceed = std::count(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>(), '\n') + 1;
     in.close();
-    // Создать файл
 
-    string filename = product_name + "__" + to_string(sTotal) + "__" + time_h_m() + ".csv";
+    qDebug() << "start_scan=" << start_scan;
+    qDebug() << "scans_overall=" << scans_overall_to_proceed;
+
+    if(scans_overall_to_proceed - start_scan > max_scans_for_template) {
+        scans_to_make_template = max_scans_for_template;
+        qDebug() << "scans_to_make_template = max_scans_for_template";
+    } else {
+        qDebug() << "scans_to_make_template != max_scans_for_template";
+        scans_to_make_template = scans_overall_to_proceed - start_scan;
+    }
+
+    qDebug() << "scans_to_make_template= " << scans_to_make_template;
+
+//    cout << "sTotal: " << sTotal << endl;
+
+
+    string filename = product_name + "__" + to_string(scans_to_make_template) + "__" + time_h_m() + ".csv";
 
     fs::path work_path = save_folder;
     work_path /= "input";
@@ -633,6 +648,14 @@ void MainWindow::make_template(QString ki_name, std::string product_name) {
 
     std::ofstream template_file;
 
+    int id_name = 1;
+    while(fs::exists(filename)) {
+        filename.resize(filename.size () - 4);
+        filename += "_" + to_string(id_name);
+        filename += ".csv";
+    }
+
+    // Создать файл
     template_file.open(filename, std::ios_base::app);
     if(not template_file.is_open()) {
         std::cout<<"Ошибка создания файла шаблона"<<std::endl;
@@ -660,6 +683,12 @@ void MainWindow::make_template(QString ki_name, std::string product_name) {
 
     std::string scan;
 
+    int to_miss = start_scan;
+
+    while (to_miss-- > 0) {
+        std::getline(infile, scan);
+    }
+
     while (std::getline(infile, scan)) {
         char gs = 29;
         auto pos = scan.find(gs);
@@ -681,9 +710,15 @@ void MainWindow::make_template(QString ki_name, std::string product_name) {
         if(need_vsd)
             template_file << "," << position.vsd;
 
-        if(--sTotal > 0)
+        if(--scans_to_make_template > 0)
             template_file << endl;
     }
+
+    if(scans_overall_to_proceed - start_scan > max_scans_for_template) {
+        qDebug() << "scans_overall_to_proceed - start_scan > max_scans_for_template 222";
+        make_template(ki_name, product_name, start_scan + max_scans_for_template);
+    }
+    qDebug() << "scans_to_make_template = max_scans_for_template            1111";
 }
 
 void MainWindow::update_xml_with_vsds_from_table() {

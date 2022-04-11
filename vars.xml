@@ -3,4 +3,5 @@
 	<save_folder>\\192.168.0.21\shared_folder\</save_folder>
 	<need_vsd>no</need_vsd>
 	<company_name>ООО "ИМПЕРИЯ СОКОВ"</company_name>
+	<max_scans_for_template>3</max_scans_for_template>
 </vars>
