@@ -554,7 +554,7 @@ map<string, string> MainWindow::get_vsds() {
 
     return vsds;
 }
-
+// make ki file devision also
 void MainWindow::make_template(QString ki_name, std::string product_name, int start_scan) {
     qDebug() << "Filename ki: " << ki_name;
     qDebug() << "product_name: " << QString::fromStdString(product_name);
@@ -627,7 +627,7 @@ void MainWindow::make_template(QString ki_name, std::string product_name, int st
         qDebug() << "scans_to_make_template = max_scans_for_template";
     } else {
         qDebug() << "scans_to_make_template != max_scans_for_template";
-        scans_to_make_template = scans_overall_to_proceed - start_scan;
+        scans_to_make_template = scans_overall_to_proceed - start_scan - 1;
     }
 
     qDebug() << "scans_to_make_template= " << scans_to_make_template;
@@ -689,7 +689,21 @@ void MainWindow::make_template(QString ki_name, std::string product_name, int st
         std::getline(infile, scan);
     }
 
-    while (std::getline(infile, scan)) {
+    std::string new_ki_name = ki_name.toStdString();
+    int id_name_ = 1;
+    while(fs::exists(new_ki_name)) {
+        new_ki_name.resize(new_ki_name.size () - 4);
+        new_ki_name += "_" + to_string(id_name_);
+        new_ki_name += ".csv";
+    }
+
+    qDebug() << "new_ki_name=" << QString::fromStdString(new_ki_name);
+    std::ofstream new_ki_file(new_ki_name, std::ios_base::app);
+
+    while (std::getline(infile, scan) && scans_to_make_template) {
+        auto origin_scan = scan;
+        qDebug() << "origin_scan=" << QString::fromStdString(origin_scan);
+        new_ki_file << origin_scan;
         char gs = 29;
         auto pos = scan.find(gs);
 
@@ -710,8 +724,10 @@ void MainWindow::make_template(QString ki_name, std::string product_name, int st
         if(need_vsd)
             template_file << "," << position.vsd;
 
-        if(--scans_to_make_template > 0)
+        if(--scans_to_make_template > 0) {
             template_file << endl;
+            new_ki_file << endl;
+        }
     }
 
     if(scans_overall_to_proceed - start_scan > max_scans_for_template) {
