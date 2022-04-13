@@ -54,6 +54,7 @@ struct TaskInfo {
              const map<string, string>& product_names_,
              const string& product_name_rus_,
              const string& date_,
+             int plan,
              std::string & company_name):
         line_number(line_number_),
         task_number(task_number_),
@@ -98,6 +99,9 @@ struct TaskInfo {
         plan_lineedit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         plan_lineedit->setMinimumWidth(100);
         plan_lineedit->setMaximumWidth(100);
+        plan_lineedit->setReadOnly(true);
+
+        plan_lineedit->setText( QString::number(plan));
 
         current_label = new QLineEdit();
         current_label->setStyleSheet("QLineEdit{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");
@@ -411,7 +415,7 @@ private:
         return time_buffer;
     }
 
-    void make_template(QString ki_name, std::string product_name, int start_scan = 0);
+    void make_template(QString ki_name, std::string product_name);
 
     int max_scans_for_template;
     std::string company_name;

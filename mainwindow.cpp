@@ -131,6 +131,7 @@ MainWindow::MainWindow(QWidget *parent)
         //ui->product_name_for_task_combobox->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
         ui->product_name_for_task_combobox->setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
         ui->date_line_edit->setStyleSheet("QLineEdit{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+        ui->create_plan_line_edit->setStyleSheet("QLineEdit{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
         ui->line_number_choose_combobox->setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
         ui->add_line_pushbutton->setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
         ui->create_template_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
@@ -523,14 +524,29 @@ void MainWindow::on_add_line_pushbutton_clicked() {
     ++task_counter;
     auto product_name_rus = ui->product_name_for_task_combobox->currentText().toStdString();
     auto date = ui->date_line_edit->text().toStdString();
-    auto task = make_shared<TaskInfo>(line_number, task_counter, product_names, product_name_rus, date, company_name);
+    int plan_remains = ui->create_plan_line_edit->text().toInt();
+    int current_plan = plan_remains;
 
-    auto inserted_task = tasks.emplace_back(task); // implicitly uint -> uint8_t for line_number
+    while(plan_remains) {
+        if(plan_remains / max_scans_for_template) {
+            plan_remains -= max_scans_for_template;
+            current_plan = max_scans_for_template;
+        }
+        else {
+            current_plan = plan_remains;
+            plan_remains = 0;
+        }
 
-    connect(inserted_task->state_button(), &QPushButton::clicked, this, &MainWindow::make_next_action);
-    connect(inserted_task->delete_task_button, &QPushButton::clicked, this, &MainWindow::remove_task);
+        qDebug() << "plan:      " << current_plan;
+        auto task = make_shared<TaskInfo>(line_number, task_counter, product_names, product_name_rus, date, current_plan, company_name);
 
-    ui->lines_layout->addLayout(inserted_task->layout());
+        auto inserted_task = tasks.emplace_back(task); // implicitly uint -> uint8_t for line_number
+
+        connect(inserted_task->state_button(), &QPushButton::clicked, this, &MainWindow::make_next_action);
+        connect(inserted_task->delete_task_button, &QPushButton::clicked, this, &MainWindow::remove_task);
+
+        ui->lines_layout->addLayout(inserted_task->layout());
+    }
 }
 
 map<string, string> MainWindow::get_vsds() {
@@ -555,7 +571,7 @@ map<string, string> MainWindow::get_vsds() {
     return vsds;
 }
 // make ki file devision also
-void MainWindow::make_template(QString ki_name, std::string product_name, int start_scan) {
+void MainWindow::make_template(QString ki_name, std::string product_name) {
     qDebug() << "Filename ki: " << ki_name;
     qDebug() << "product_name: " << QString::fromStdString(product_name);
     if(ki_name.isEmpty())
@@ -612,30 +628,18 @@ void MainWindow::make_template(QString ki_name, std::string product_name, int st
 
     // Подсчитать кол-во сканов
     string s;
-    int scans_to_make_template = 0;
+    int sTotal = 0;
 
     std::ifstream in(ki_name.toStdString());
 
-    int scans_overall_to_proceed = std::count(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>(), '\n') + 1;
+    sTotal = std::count(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>(), '\n') + 1;
+    qDebug() << "sTotal=" << sTotal;
+
+    cout << "sTotal: " << sTotal << endl;
     in.close();
+    // Создать файл
 
-    qDebug() << "start_scan=" << start_scan;
-    qDebug() << "scans_overall=" << scans_overall_to_proceed;
-
-    if(scans_overall_to_proceed - start_scan > max_scans_for_template) {
-        scans_to_make_template = max_scans_for_template;
-        qDebug() << "scans_to_make_template = max_scans_for_template";
-    } else {
-        qDebug() << "scans_to_make_template != max_scans_for_template";
-        scans_to_make_template = scans_overall_to_proceed - start_scan - 1;
-    }
-
-    qDebug() << "scans_to_make_template= " << scans_to_make_template;
-
-//    cout << "sTotal: " << sTotal << endl;
-
-
-    string filename = product_name + "__" + to_string(scans_to_make_template) + "__" + time_h_m() + ".csv";
+    string filename = product_name + "__" + to_string(sTotal) + "__" + time_h_m() + ".csv";
 
     fs::path work_path = save_folder;
     work_path /= "input";
@@ -648,14 +652,6 @@ void MainWindow::make_template(QString ki_name, std::string product_name, int st
 
     std::ofstream template_file;
 
-    int id_name = 1;
-    while(fs::exists(filename)) {
-        filename.resize(filename.size () - 4);
-        filename += "_" + to_string(id_name);
-        filename += ".csv";
-    }
-
-    // Создать файл
     template_file.open(filename, std::ios_base::app);
     if(not template_file.is_open()) {
         std::cout<<"Ошибка создания файла шаблона"<<std::endl;
@@ -683,27 +679,7 @@ void MainWindow::make_template(QString ki_name, std::string product_name, int st
 
     std::string scan;
 
-    int to_miss = start_scan;
-
-    while (to_miss-- > 0) {
-        std::getline(infile, scan);
-    }
-
-    std::string new_ki_name = ki_name.toStdString();
-    int id_name_ = 1;
-    while(fs::exists(new_ki_name)) {
-        new_ki_name.resize(new_ki_name.size () - 4);
-        new_ki_name += "_" + to_string(id_name_);
-        new_ki_name += ".csv";
-    }
-
-    qDebug() << "new_ki_name=" << QString::fromStdString(new_ki_name);
-    std::ofstream new_ki_file(new_ki_name, std::ios_base::app);
-
-    while (std::getline(infile, scan) && scans_to_make_template) {
-        auto origin_scan = scan;
-        qDebug() << "origin_scan=" << QString::fromStdString(origin_scan);
-        new_ki_file << origin_scan;
+    while (std::getline(infile, scan)) {
         char gs = 29;
         auto pos = scan.find(gs);
 
@@ -724,17 +700,9 @@ void MainWindow::make_template(QString ki_name, std::string product_name, int st
         if(need_vsd)
             template_file << "," << position.vsd;
 
-        if(--scans_to_make_template > 0) {
+        if(--sTotal > 0)
             template_file << endl;
-            new_ki_file << endl;
-        }
     }
-
-    if(scans_overall_to_proceed - start_scan > max_scans_for_template) {
-        qDebug() << "scans_overall_to_proceed - start_scan > max_scans_for_template 222";
-        make_template(ki_name, product_name, start_scan + max_scans_for_template);
-    }
-    qDebug() << "scans_to_make_template = max_scans_for_template            1111";
 }
 
 void MainWindow::update_xml_with_vsds_from_table() {
