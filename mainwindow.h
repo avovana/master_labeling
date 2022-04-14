@@ -63,7 +63,7 @@ struct TaskInfo {
         date(date_)
     {
 //        m_status = TaskStatus::IN_PROGRESS;
-        qDebug("Task line_number=%d, task_number=%d created INFO", line_number, task_number);
+        qDebug("Task line_number=%d, task_number=%d plan=%d created INFO", line_number, task_number, plan);
         new_layout = new QHBoxLayout();
         line_number_label = new QLabel();
         line_number_label->setStyleSheet("QLabel{font-size: 40px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(141, 255, 255);}");

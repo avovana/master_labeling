@@ -132,6 +132,7 @@ MainWindow::MainWindow(QWidget *parent)
         ui->product_name_for_task_combobox->setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
         ui->date_line_edit->setStyleSheet("QLineEdit{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
         ui->create_plan_line_edit->setStyleSheet("QLineEdit{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
+        ui->create_plan_line_edit->setToolTip("План задать");
         ui->line_number_choose_combobox->setStyleSheet("QComboBox{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
         ui->add_line_pushbutton->setStyleSheet("QPushButton{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
         ui->create_template_label->setStyleSheet("QLabel{font-size: 18px;font-family: Arial;color: rgb(255, 255, 255);background-color: rgb(92, 99, 118);}");
@@ -520,14 +521,16 @@ void MainWindow::make_next_action() {
 }
 
 void MainWindow::on_add_line_pushbutton_clicked() {
+    qDebug() << "===============" << __PRETTY_FUNCTION__ << "===============";
     auto line_number = ui->line_number_choose_combobox->currentText().toInt();
-    ++task_counter;
+
     auto product_name_rus = ui->product_name_for_task_combobox->currentText().toStdString();
     auto date = ui->date_line_edit->text().toStdString();
     int plan_remains = ui->create_plan_line_edit->text().toInt();
     int current_plan = plan_remains;
 
     while(plan_remains) {
+        ++task_counter;
         if(plan_remains / max_scans_for_template) {
             plan_remains -= max_scans_for_template;
             current_plan = max_scans_for_template;
@@ -537,7 +540,6 @@ void MainWindow::on_add_line_pushbutton_clicked() {
             plan_remains = 0;
         }
 
-        qDebug() << "plan:      " << current_plan;
         auto task = make_shared<TaskInfo>(line_number, task_counter, product_names, product_name_rus, date, current_plan, company_name);
 
         auto inserted_task = tasks.emplace_back(task); // implicitly uint -> uint8_t for line_number
