@@ -269,7 +269,7 @@ void MainWindow::on_server_read() {
         array.append(read_bytes_chunk);
         bytes_to_read -= read_bytes_chunk.size();
 
-        qDebug() << "bytes_to_read=" << bytes_to_read;
+        qDebug() << "bytes_to_read= " << bytes_to_read;
     }
 
     QDataStream received_bytes(array);
@@ -336,7 +336,7 @@ void MainWindow::on_server_read() {
 
         case 2:
         {
-            qDebug() << "--------Scan receive--------";
+
             auto task_it = std::find_if(begin(tasks), end(tasks),
                                                     [&](auto &task) { return line_number == task->line_number && task_number == task->task_number;});
 
@@ -351,6 +351,7 @@ void MainWindow::on_server_read() {
 
             received_bytes.readRawData(buffer.data(), body_size);
             QString scan_number(buffer);
+            qDebug() << "Scan " << scan_number << " received";
 
             task->set_current(scan_number);
         }
@@ -427,6 +428,10 @@ void MainWindow::on_server_read() {
         }
         break;
     }
+
+    qDebug() << " bytes_available at the end=" << socket->bytesAvailable();
+    if(socket->bytesAvailable())
+        on_server_read();
 }
 
 void MainWindow::on_client_disconnected() {
