@@ -244,7 +244,7 @@ void MainWindow::on_server_read() {
     spdlog::info("header : {}, bytes to read for this message: {}", array_header.toHex().toStdString(), bytes_to_read);
 
     int attempts = 50;
-    if(bytes_to_read > 0) {
+    while(bytes_to_read > 0) {
         if (!socket->waitForReadyRead(100)) {
             spdlog::info("waiting header bytes timed out. attempts: {}", attempts);
             if(not attempts--) {
