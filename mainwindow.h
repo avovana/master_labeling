@@ -13,6 +13,8 @@
 #include <string>
 #include <map>
 
+#include "spdlog/spdlog.h"
+
 #include "pugixml.hpp"
 
 namespace Ui {
@@ -249,9 +251,6 @@ struct LineConnector {
             for(auto &task: tasks)
                 msg.append(task);
 
-            qDebug() << "msg = " << QString::fromStdString(msg);
-            qDebug() << "msg_size = " << msg.size();
-
             QByteArray out_array;
             QDataStream stream(&out_array, QIODevice::WriteOnly);
             unsigned int out_msg_size = msg.size() + sizeof(unsigned int);
@@ -267,10 +266,8 @@ struct LineConnector {
 //            for(int i = 0; i < out_array.count(); ++i)
 //              qDebug() << "out_array[" << i << "] " << out_array[i];
 
-            qDebug() << "out_array_size=" << out_array.size();
-
             socket->write(out_array);
-            qDebug() << "Wrote sucess INFO";
+            spdlog::info("Wrote sucess msg: {}, size: {}, bytes overall: {}", msg, msg.size(), out_array.size());
         }
     }
 

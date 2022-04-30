@@ -68,10 +68,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     pugi::xml_document doc;
     if (!doc.load_file("vars.xml")) {
-        cout << "Load vars XML FAILED" << endl;
+        spdlog::info("Load vars XML FAILED");
         return;
     } else {
-        cout << "Load vars XML SUCCESS" << endl;
+        spdlog::info("Load vars XML SUCCESS");
     }
 
     pugi::xml_node save_folder_child = doc.child("vars").child("save_folder");
@@ -85,12 +85,13 @@ MainWindow::MainWindow(QWidget *parent)
     save_remote_vsd = save_remote_vsd_child.text().get();
     std::string need_vsd_str = need_vsd_child.text().get();
     cout << "max_scans_for_template: " << max_scans_for_template << endl;
-    cout << "company_name: " << company_name << endl;
-    cout << "need_vsd_str: " << need_vsd_str << endl;
+    spdlog::info("max_scans_for_template: {} ", max_scans_for_template);
+    spdlog::info("company_name: {} ", company_name);
+    spdlog::info("need_vsd_str: {} ", need_vsd_str);
     need_vsd = need_vsd_str == "no" ? false : true;
-    cout << "save_folder: " << save_folder << endl;
-    cout << "save_remote_vsd: " << save_remote_vsd << endl;
-    cout << "need_vsd: " << need_vsd << endl;
+    spdlog::info("save_folder: {} ", save_folder);
+    spdlog::info("save_remote_vsd: {} ", save_remote_vsd);
+    spdlog::info("need_vsd: {} ", need_vsd);
 
     mTcpServer = new QTcpServer(this);
 
@@ -98,9 +99,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->save_vsd_button, &QPushButton::clicked, this, &MainWindow::update_xml_with_vsds_from_table);
 
     if(not mTcpServer->listen(QHostAddress::Any, 6000))
-        cout << "tcp_server status=not_started " << endl;
+        spdlog::info("tcp_server status=not_started");
     else
-        cout << "tcp_server status=started " << endl;
+        spdlog::info("tcp_server status=started");
 
     QStringList headers;
     headers << trUtf8("Продукция")
@@ -149,7 +150,6 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     auto rus_eng_names = fill_table();
-
     QStringList items;
     for(auto const& [name_rus, name_eng]: rus_eng_names) {
         items.append(QString::fromStdString(name_rus));
@@ -175,10 +175,10 @@ map<std::string, std::string>  MainWindow::fill_table() {
 
     pugi::xml_document doc;
     if (!doc.load_file("positions.xml")) {
-        cout << "Load XML positions.xml FAILED" << endl;
+        spdlog::info("Load XML positions.xml FAILED");
         return {};
     } else {
-        cout << "Load XML positions.xml SUCCESS" << endl;
+        spdlog::info("Load XML positions.xml SUCCESS");
     }
 
     pugi::xml_node inn_xml = doc.child("resources").child("inn");
@@ -187,7 +187,7 @@ map<std::string, std::string>  MainWindow::fill_table() {
     pugi::xml_node positions_xml = doc.child("resources").child("input");
 
     if (positions_xml.children("position").begin() == positions_xml.children("position").end()) {
-        cout << "Positions in positions.xml absent ERROR" << endl;
+        spdlog::info("Positions in positions.xml absent ERROR");
         return {};
     }
 
@@ -196,8 +196,8 @@ map<std::string, std::string>  MainWindow::fill_table() {
         std::string name_eng = position_xml.attribute("name_english").as_string();
         std::string name_rus = position_xml.attribute("name").as_string();
         std::string vsd = position_xml.attribute("vsd").as_string();
-        qDebug() << position_xml.attribute("name").as_string();
-        qDebug() << position_xml.attribute("vsd").as_string();
+        spdlog::info("{}", position_xml.attribute("vsd").as_string());
+        spdlog::info("{}", position_xml.attribute("name").as_string());
 
         if(need_vsd) {
             ui->table->insertRow(row);
@@ -216,60 +216,50 @@ map<std::string, std::string>  MainWindow::fill_table() {
 
 void MainWindow::on_new_connection() {
     QTcpSocket * new_socket = mTcpServer->nextPendingConnection();
-    qDebug() << "on_new_connection " << new_socket;
     sockets.push_back(new_socket);
-    qDebug() << "Local:";
-    qDebug() << new_socket->localAddress();
-    qDebug() << new_socket->localPort();
-    qDebug() << "Peer:";
-    qDebug() << new_socket->peerAddress();
-    qDebug() << new_socket->peerPort();
+    spdlog::info("new connection, local {} {}, peer {} {}", new_socket->localAddress().toString().toStdString(), new_socket->localPort(), new_socket->peerAddress().toString().toStdString(), new_socket->peerPort());
 
     connect(new_socket, &QTcpSocket::readyRead, this, &MainWindow::on_server_read);
     connect(new_socket, &QTcpSocket::disconnected, this, &MainWindow::on_client_disconnected);
 }
 
 void MainWindow::on_server_read() {
-    qDebug() << "===============" << __PRETTY_FUNCTION__ << "================";
     QTcpSocket* socket = qobject_cast< QTcpSocket* >(sender());
 
-    qDebug() << "bytes_available=" << socket->bytesAvailable();
+    spdlog::info("Received bytes: {}", socket->bytesAvailable());
 
     QByteArray array;
     QByteArray array_header;
 
     while(socket->bytesAvailable() < 4)
         if (!socket->waitForReadyRead(10))
-            qDebug() << "waiting header bytes timed out INFO";
+            spdlog::info("waiting header bytes timed out");
 
     array_header = socket->read(4);
-    qDebug() << "array_header=" << array_header;
 
     uint32_t bytes_to_read;
     QDataStream ds_header(array_header);
     ds_header >> bytes_to_read;
 
-    qDebug() << "bytes_to_read = " << bytes_to_read;
+    spdlog::info("header : {}, bytes to read for this message: {}", array_header.toHex().toStdString(), bytes_to_read);
 
     int attempts = 50;
     if(bytes_to_read > 0) {
         if (!socket->waitForReadyRead(100)) {
-            qDebug() << "waiting bytes timed out INFO";
-            qDebug() << "attempts: " << attempts;
+            spdlog::info("waiting header bytes timed out. attempts: {}", attempts);
             if(not attempts--) {
                 socket->close();
-                qDebug() << "socket closed";
+                spdlog::info("socket closed");
                 return;
             }
         }
 
         QByteArray read_bytes_chunk = socket->read(bytes_to_read);
-        qDebug() << "read_bytes_chunk=" << read_bytes_chunk.size();
 
         array.append(read_bytes_chunk);
         bytes_to_read -= read_bytes_chunk.size();
 
-        qDebug() << "bytes_to_read= " << bytes_to_read;
+        spdlog::info("read bytes already: {}, remain bytes: {}", read_bytes_chunk.size(), bytes_to_read);
     }
 
     QDataStream received_bytes(array);
@@ -284,7 +274,7 @@ void MainWindow::on_server_read() {
 
     uint32_t body_size = array.size() - 3;
 
-    qDebug() << "msg_type = " << msg_type << " line_number = " << line_number << " task_number = " << task_number << " INFO";
+    spdlog::info("msg type: {}, line number: {}, task number: {}", msg_type, line_number, task_number);
 
 //    qDebug() << "receive method socket " << socket;
 //    qDebug() << "receive method socket " << &*socket;
@@ -296,7 +286,7 @@ void MainWindow::on_server_read() {
     switch(msg_type) {
         case 1:
         {
-            qDebug() << "--------Info request--------";
+//            qDebug() << "--------Info request--------";
             const auto & tasks_for_line = get_tasks_for_line(line_number);
 
             std::vector<string> tasks_info;
@@ -341,7 +331,7 @@ void MainWindow::on_server_read() {
                                                     [&](auto &task) { return line_number == task->line_number && task_number == task->task_number;});
 
             if(task_it == end(tasks)) {
-                qDebug() << "Task doesn't exist! ERROR" << msg_type;
+                spdlog::error("Task doesn't exist");
                 return;
             }
 
@@ -351,35 +341,34 @@ void MainWindow::on_server_read() {
 
             received_bytes.readRawData(buffer.data(), body_size);
             QString scan_number(buffer);
-            qDebug() << "Scan " << scan_number << " received";
+            spdlog::info("Received scan number: {}", scan_number.toLong());
 
             task->set_current(scan_number);
         }
         break;
         case 3:
         {
-            qDebug() << "--------File receive--------";
+//            qDebug() << "--------File receive--------";
 
             auto task_it = std::find_if(begin(tasks), end(tasks),
                                                     [&](auto &task) { return line_number == task->line_number && task_number == task->task_number;});
 
             if(task_it == end(tasks)) {
-                qDebug() << "Task doesn't exist! ERROR";
+                spdlog::error("Task doesn't exist");
                 return;
             }
 
             auto & task = *task_it;
 
             if(task->status() == TaskStatus::FINISHED)
-                qDebug() << "Task FINISHED already! ERROR";
+                spdlog::error("Task FINISHED already");
 
             QByteArray buffer(body_size, Qt::Uninitialized);
 
             received_bytes.readRawData(buffer.data(), body_size);
             QString scans(buffer);
 
-            qDebug() << "file save...";
-            qDebug() << scans;
+            spdlog::info("Start to save file with scans: {}", scans.toStdString());
             auto pos = scans.lastIndexOf(QChar('\n'));
             if(pos != -1)
                 scans.truncate(pos);
@@ -392,14 +381,14 @@ void MainWindow::on_server_read() {
             fs::create_directories(work_path);
             fs::current_path(work_path);
             string scans_number = to_string(scans.count(QChar('\n')) + 1);
-            qDebug() << "scans_number=" << scans_number.c_str();
+            spdlog::info("scans: {}", scans_number);
 //            qDebug() << "fs::current_path=" << fs::current_path().c_str();
 
             QString product_name;
 
             std::string filename = task->product_name_eng() + "__" + scans_number + " __" + time_h_m() + ".csv";
             task->current_label->setText(QString::fromStdString(scans_number));
-            qDebug() << "filename=" << filename.c_str();
+            spdlog::info("filename: {}", filename.c_str());
             work_path /= filename;
 //            qDebug() << "work_path: " << work_path.c_str();
             task->file_name = work_path.string();
@@ -407,7 +396,7 @@ void MainWindow::on_server_read() {
             out << scans.toStdString();
             out.close();
 
-            qDebug() << "file save done";
+            spdlog::info("Finished file save");
             task->set_status(TaskStatus::FINISHED);
             task->state_button()->setText("Завершено. Сделать шаблон");
             task->state_button()->setStyleSheet("QPushButton{font-size: 25px;font-family: Arial;color: rgb(255, 255, 255);background-color: green;}");
@@ -417,7 +406,7 @@ void MainWindow::on_server_read() {
         break;
         case 4:
         {
-            qDebug() << "--------Task started--------";
+//            qDebug() << "--------Task started--------";
             const auto & tasks_for_line = get_tasks_for_line(line_number);
 
             for_each(begin(tasks_for_line), end(tasks_for_line),[&](auto & task) {
@@ -429,7 +418,7 @@ void MainWindow::on_server_read() {
         break;
     }
 
-    qDebug() << " bytes_available at the end=" << socket->bytesAvailable();
+    spdlog::info("Received bytes at the end: {}", socket->bytesAvailable());
     if(socket->bytesAvailable())
         on_server_read();
 }
@@ -588,19 +577,19 @@ void MainWindow::make_template(QString ki_name, std::string product_name) {
     //------------------------Download config-----------------------------
     Position position;
 
-    cout << "fs::current_path(): " << fs::current_path() << endl;
+    spdlog::info("current_path: {} ", fs::current_path().string());
     for (const auto & entry : fs::directory_iterator(fs::current_path()))
         std::cout << entry.path() << std::endl;
 
     fs::current_path(save_folder);
-    cout << "fs::current_path(): " << fs::current_path() << endl;
+    spdlog::info("current_path: {} ", fs::current_path().string());
 
     pugi::xml_document doc;
     if (!doc.load_file("positions.xml")) {
-        cout << "Load XML positions.xml FAILED" << endl;
+        spdlog::info("Load XML positions.xml FAILED");
         return;
     } else {
-        cout << "Load XML positions.xml SUCCESS" << endl;
+        spdlog::info("Load XML positions.xml SUCCESS");
     }
 
     pugi::xml_node inn_xml = doc.child("resources").child("inn");
@@ -609,13 +598,13 @@ void MainWindow::make_template(QString ki_name, std::string product_name) {
     pugi::xml_node positions_xml = doc.child("resources").child("input");
 
     if (positions_xml.children("position").begin() == positions_xml.children("position").end()) {
-        cout << "Positions in positions.xml absent ERROR" << endl;
+        spdlog::info("Positions in positions.xml absent ERROR");
         return;
     }
 
     for (pugi::xml_node position_xml: positions_xml.children("position")) {
         std::string position_name = position_xml.attribute("name_english").as_string();
-        std::cout << "position_name=" << position_name << endl;
+        spdlog::info("position_name= {} ", position_name);
 
         if(product_name == position_name) {
             position = Position{position_xml.attribute("code_tn_ved").as_string(),
@@ -629,7 +618,10 @@ void MainWindow::make_template(QString ki_name, std::string product_name) {
                                          position_xml.attribute("expected").as_int(),
                                          position_xml.attribute("current").as_int()};
 
-            std::cout << "position=" << endl << position << endl;
+            std::stringstream ss;
+            ss << position;
+
+            spdlog::info("position= {} ", ss.str());
         }
     }
     //------------------------Make file-----------------------------
@@ -643,7 +635,7 @@ void MainWindow::make_template(QString ki_name, std::string product_name) {
     sTotal = std::count(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>(), '\n') + 1;
     qDebug() << "sTotal=" << sTotal;
 
-    cout << "sTotal: " << sTotal << endl;
+    spdlog::info("sTotal: {} ", sTotal);
     in.close();
     // Создать файл
 
@@ -719,7 +711,7 @@ void MainWindow::make_template(QString ki_name, std::string product_name) {
 void MainWindow::update_xml_with_vsds_from_table() {
     const auto& vsd_per_names = get_vsds();
     if(vsd_per_names.empty()) {
-        cout << "VSD not found ERROR" << endl;
+        spdlog::info("VSD not found ERROR");
         throw std::logic_error("error");
         close(); // не помню, что за close()
     }
@@ -732,9 +724,9 @@ void MainWindow::update_xml_with_vsds_from_table() {
     // XML open
     pugi::xml_document doc;
     if (doc.load_file("positions.xml")) {
-        cout << "Load XML success" << endl;
+        spdlog::info("Load XML success");
     } else {
-        cout << "Load XML ERROR" << endl;
+        spdlog::info("Load XML ERROR");
         throw std::logic_error("error");
         close();
     }
@@ -756,16 +748,16 @@ void MainWindow::update_xml_with_vsds_from_table() {
     }
 
     if(not doc.save_file("positions.xml")) {
-        cout << "ERROR VSD safe local===============================================" << endl;
+        spdlog::info("ERROR VSD safe local===============================================");
         throw std::logic_error("error");
     } else {
-        cout << "VSD safe SUCCES local==============================================" << endl;
+        spdlog::info("VSD safe SUCCES local==============================================");
     }
 
     if(not doc.save_file(save_remote_vsd.c_str())) {
-        cout << "ERROR VSD safe remote===============================================" << endl;
+        spdlog::info("ERROR VSD safe remote===============================================");
     } else {
-        cout << "VSD safe SUCCES remote==============================================" << endl;
+        spdlog::info("VSD safe SUCCES remote==============================================");
     }
 }
 
